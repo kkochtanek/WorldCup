@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>World Cup 2026 Draft</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --black:    #07090f;
+  --navy:     #0d1626;
+  --navy2:    #121f38;
+  --border:   #1c2d4e;
+  --gold:     #c8a84b;
+  --gold-l:   #e6c76a;
+  --gold-dim: rgba(200,168,75,0.12);
+  --green:    #27ae60;
+  --red:      #e74c3c;
+  --blue:     #2980b9;
+  --text:     #dde2ef;
+  --muted:    #5a6a8a;
+  --r:        10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--black);color:var(--text);font-family:'Inter',sans-serif}
+
+/* ── HEADER ── */
+header{
+  background:var(--navy);
+  border-bottom:1px solid var(--border);
+  padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold)}
+.logo em{color:var(--text);font-style:normal}
+.hright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.sync-dot.live{background:var(--green);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── VIEWS ── */
+.view{display:none;padding:0}
+.view.active{display:block}
+
+/* ── MANAGER PICKER SCREEN ── */
+#screen-pick{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 20px;
+  background:radial-gradient(ellipse at top,rgba(200,168,75,.07) 0%,transparent 60%),var(--black);
+}
+.wc-trophy{font-size:64px;margin-bottom:16px;animation:floatY 3s ease-in-out infinite}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.pick-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:4px;color:var(--gold);text-align:center;margin-bottom:6px}
+.pick-sub{color:var(--muted);font-size:14px;text-align:center;margin-bottom:40px}
+.manager-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:480px}
+.mgr-btn{
+  padding:14px 24px;border-radius:10px;
+  background:var(--navy);border:1px solid var(--border);
+  color:var(--text);font-size:15px;font-weight:600;cursor:pointer;
+  transition:all .2s;font-family:'Inter',sans-serif;
+  display:flex;align-items:center;gap:10px;
+}
+.mgr-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.mgr-btn .draft-pos{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* ── TABS ── */
+.tabs{
+  background:var(--navy);
+  border-bottom:1px solid var(--border);
+  display:flex;gap:0;overflow-x:auto;
+}
+.tab{
+  padding:12px 20px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--muted);
+  background:none;border:none;border-bottom:2px solid transparent;
+  white-space:nowrap;transition:all .2s;font-family:'Inter',sans-serif;
+}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── MAIN CONTENT ── */
+.main{padding:20px;max-width:1000px;margin:0 auto}
+
+/* ── CARDS ── */
+.card{background:var(--navy);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--gold);margin-bottom:14px}
+
+/* ── ON CLOCK BANNER ── */
+.clock-banner{
+  border-radius:var(--r);padding:18px 20px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.clock-banner.yours{
+  background:linear-gradient(135deg,rgba(200,168,75,.2),rgba(200,168,75,.05));
+  border:1px solid var(--gold);
+}
+.clock-banner.waiting{
+  background:var(--navy);border:1px solid var(--border);
+}
+.clock-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--gold)}
+.clock-sub{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.clock-tag{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  padding:4px 10px;border-radius:5px;font-weight:600;
+}
+.clock-tag.yours-tag{background:var(--gold-dim);color:var(--gold-l);border:1px solid var(--gold)}
+.clock-tag.wait-tag{background:var(--navy2);color:var(--muted);border:1px solid var(--border)}
+
+/* ── TEAM GRID ── */
+.search-wrap{position:relative;margin-bottom:10px}
+.search-wrap input{padding-left:36px}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.gfilters{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.gf{
+  padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;
+  border:1px solid var(--border);background:none;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;transition:all .15s;
+}
+.gf.on,.gf:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.team-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;
+  max-height:460px;overflow-y:auto;padding-right:2px;
+}
+.team-grid::-webkit-scrollbar{width:3px}
+.team-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.tcard{
+  background:var(--navy2);border:1px solid var(--border);border-radius:8px;
+  padding:9px 11px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:9px;
+}
+.tcard:hover:not(.taken){border-color:var(--gold);background:var(--gold-dim)}
+.tcard.taken{opacity:.28;cursor:not-allowed}
+.tcard.taken .tname{text-decoration:line-through}
+.tflag{font-size:20px;line-height:1}
+.tname{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tgrp{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+input[type=text],input[type=password]{
+  background:var(--navy2);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);padding:9px 12px;font-size:14px;
+  font-family:'Inter',sans-serif;width:100%;transition:border .2s;
+}
+input:focus{outline:none;border-color:var(--gold)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 18px;border-radius:7px;border:none;cursor:pointer;
+  font-weight:600;font-size:13px;transition:all .2s;font-family:'Inter',sans-serif;
+}
+.btn-gold{background:var(--gold);color:var(--black)}
+.btn-gold:hover{background:var(--gold-l)}
+.btn-out{background:none;border:1px solid var(--border);color:var(--text)}
+.btn-out:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-red{background:rgba(231,76,60,.12);border:1px solid var(--red);color:var(--red)}
+
+/* ── DRAFT BOARD ── */
+.board-grid{display:flex;flex-direction:column;gap:7px}
+.brow{
+  background:var(--navy2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;transition:border .2s;
+}
+.brow.onclock{border-color:var(--gold);background:var(--gold-dim)}
+.brow.me{border-color:rgba(200,168,75,.4)}
+.brow-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.brow-name{font-weight:700;font-size:13px}
+.brow-count{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{
+  background:var(--navy);border:1px solid var(--border);border-radius:4px;
+  padding:2px 7px;font-size:11px;display:flex;align-items:center;gap:4px;
+}
+
+/* ── LEADERBOARD ── */
+.lb-list{display:flex;flex-direction:column;gap:8px}
+.lb-row{
+  background:var(--navy2);border:1px solid var(--border);border-radius:8px;
+  padding:13px 16px;display:flex;align-items:center;gap:14px;
+}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:26px;min-width:34px;text-align:center;color:var(--muted)}
+.lb-rank.r1{color:#ffd700}.lb-rank.r2{color:#c0c0c0}.lb-rank.r3{color:#cd7f32}
+.lb-info{flex:1}
+.lb-name{font-weight:700;font-size:15px}
+.lb-teams{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5}
+.lb-pts{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--gold);letter-spacing:1px;text-align:right}
+.lb-ptsl{font-size:10px;color:var(--muted);text-align:right;font-family:'JetBrains Mono',monospace}
+
+/* ── SETUP ── */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:680px){.setup-grid{grid-template-columns:1fr}}
+.mgr-inputs{display:flex;flex-direction:column;gap:7px}
+.mgr-row{display:flex;align-items:center;gap:8px}
+.pos-badge{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--gold);background:var(--gold-dim);
+  border-radius:4px;padding:2px 7px;min-width:26px;text-align:center;
+}
+.pts-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.pc{background:var(--navy2);border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.pc b{color:var(--gold)}
+.alert{padding:11px 14px;border-radius:7px;font-size:13px;margin-bottom:12px;line-height:1.5}
+.alert-info{background:rgba(41,128,185,.1);border:1px solid rgba(41,128,185,.3);color:#7fb3d3}
+.alert-warn{background:rgba(200,168,75,.1);border:1px solid var(--gold);color:var(--gold-l)}
+.alert-ok{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);color:#7dcfa0}
+
+/* ── TEAMS TABLE ── */
+.ttable{width:100%;border-collapse:collapse;font-size:12px}
+.ttable th{text-align:left;padding:8px 10px;color:var(--muted);font-size:10px;letter-spacing:1px;border-bottom:1px solid var(--border)}
+.ttable td{padding:8px 10px;border-bottom:1px solid rgba(28,45,78,.4)}
+.ttable tr:last-child td{border-bottom:none}
+.sbadge{font-size:10px;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.s-group{background:rgba(200,168,75,.1);color:var(--gold);border:1px solid rgba(200,168,75,.25)}
+.s-alive{background:rgba(39,174,96,.1);color:var(--green);border:1px solid rgba(39,174,96,.25)}
+.s-out{background:rgba(231,76,60,.1);color:var(--red);border:1px solid rgba(231,76,60,.2)}
+
+/* ── CONFIRM MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  display:flex;align-items:center;justify-content:center;
+  z-index:999;padding:20px;
+}
+.modal{
+  background:var(--navy);border:1px solid var(--border);border-radius:14px;
+  padding:28px;max-width:380px;width:100%;text-align:center;
+}
+.modal-flag{font-size:56px;margin-bottom:12px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--gold);margin-bottom:6px}
+.modal-sub{font-size:14px;color:var(--muted);margin-bottom:22px}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+
+/* ── LOADING ── */
+.loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:60vh;gap:12px;color:var(--muted);font-size:14px;
+}
+.spinner{
+  width:36px;height:36px;border:3px solid var(--border);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── DRAFT COMPLETE ── */
+.complete-banner{
+  background:linear-gradient(135deg,rgba(200,168,75,.18),transparent);
+  border:1px solid var(--gold);border-radius:var(--r);
+  padding:22px;text-align:center;margin-bottom:18px;
+}
+.complete-banner h2{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);letter-spacing:3px}
+
+footer{text-align:center;padding:22px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:40px;font-family:'JetBrains Mono',monospace}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  .main{padding:14px}
+  .clock-name{font-size:22px}
+  header{padding:12px 14px}
+  .logo{font-size:19px}
+}
+</style>
+</head>
+<body>
+
+<!-- CONFIG: Replace these two values after Supabase setup -->
+<script>
+const SUPABASE_URL = 'https://kqwitbmocklwsmjcuxoy.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtxd2l0Ym1vY2tsd3NtamN1eG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjIxNzUsImV4cCI6MjA5NjUzODE3NX0.0CSZvNAy_Av4D4Kl0apgHCiEj2ecW-K1AXtYQUFSJRI';
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script>
+// ─── SUPABASE CLIENT (lightweight, no npm needed) ───────────────────────────
+class SupabaseClient {
+  constructor(url, key) {
+    this.url = url; this.key = key;
+  }
+  headers() {
+    return { 'Content-Type':'application/json', 'apikey': this.key, 'Authorization': 'Bearer ' + this.key };
+  }
+  async from(table) { return new SupabaseQuery(this, table); }
+  channel(name) { return new RealtimeChannel(this, name); }
+}
+class SupabaseQuery {
+  constructor(client, table) {
+    this.client = client; this.table = table;
+    this._select = '*'; this._filters = []; this._single = false;
+  }
+  select(cols) { this._select = cols||'*'; return this; }
+  eq(col,val) { this._filters.push(`${col}=eq.${val}`); return this; }
+  order(col,{ascending}={}) { this._order = `${col}.${ascending?'asc':'desc'}`; return this; }
+  single() { this._single = true; return this; }
+  async execute() {
+    let url = `${this.client.url}/rest/v1/${this.table}?select=${this._select}`;
+    if (this._filters.length) url += '&' + this._filters.join('&');
+    if (this._order) url += `&order=${this._order}`;
+    const res = await fetch(url, { headers: this.client.headers() });
+    const data = await res.json();
+    return { data: this._single ? data[0] : data, error: res.ok ? null : data };
+  }
+  async insert(rows) {
+    const res = await fetch(`${this.client.url}/rest/v1/${this.table}`, {
+      method:'POST', headers:{...this.client.headers(),'Prefer':'return=representation'},
+      body: JSON.stringify(Array.isArray(rows)?rows:[rows])
+    });
+    const data = await res.json();
+    return { data, error: res.ok ? null : data };
+  }
+  async update(vals) {
+    let url = `${this.client.url}/rest/v1/${this.table}?`;
+    if (this._filters.length) url += this._filters.join('&');
+    const res = await fetch(url, {
+      method:'PATCH', headers:{...this.client.headers(),'Prefer':'return=representation'},
+      body: JSON.stringify(vals)
+    });
+    const data = await res.json();
+    return { data, error: res.ok ? null : data };
+  }
+  async upsert(rows) {
+    const res = await fetch(`${this.client.url}/rest/v1/${this.table}`, {
+      method:'POST', headers:{...this.client.headers(),'Prefer':'return=representation,resolution=merge-duplicates'},
+      body: JSON.stringify(Array.isArray(rows)?rows:[rows])
+    });
+    const data = await res.json();
+    return { data, error: res.ok ? null : data };
+  }
+}
+class RealtimeChannel {
+  constructor(client, name) { this.client = client; this.name = name; this._cbs = []; }
+  on(event, filter, cb) { this._cbs.push({event,filter,cb}); return this; }
+  subscribe() {
+    // Polling fallback (WebSocket realtime requires additional setup)
+    this._interval = setInterval(() => this._cbs.forEach(c => c.cb({new:{}})), 3000);
+    return this;
+  }
+  unsubscribe() { clearInterval(this._interval); }
+}
+const sb = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON);
+</script>
+
+<!-- ─── TEAMS DATA ─────────────────────────────────────────────────────────── -->
+<script>
+const TEAMS = [
+  {id:'USA',name:'United States',flag:'🇺🇸',group:'A'},{id:'MEX',name:'Mexico',flag:'🇲🇽',group:'A'},
+  {id:'CAN',name:'Canada',flag:'🇨🇦',group:'A'},{id:'PAN',name:'Panama',flag:'🇵🇦',group:'A'},
+  {id:'ARG',name:'Argentina',flag:'🇦🇷',group:'B'},{id:'CHI',name:'Chile',flag:'🇨🇱',group:'B'},
+  {id:'PER',name:'Peru',flag:'🇵🇪',group:'B'},{id:'BOL',name:'Bolivia',flag:'🇧🇴',group:'B'},
+  {id:'BRA',name:'Brazil',flag:'🇧🇷',group:'C'},{id:'URU',name:'Uruguay',flag:'🇺🇾',group:'C'},
+  {id:'PAR',name:'Paraguay',flag:'🇵🇾',group:'C'},{id:'VEN',name:'Venezuela',flag:'🇻🇪',group:'C'},
+  {id:'FRA',name:'France',flag:'🇫🇷',group:'D'},{id:'BEL',name:'Belgium',flag:'🇧🇪',group:'D'},
+  {id:'WAL',name:'Wales',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',group:'D'},{id:'MAR',name:'Morocco',flag:'🇲🇦',group:'D'},
+  {id:'ESP',name:'Spain',flag:'🇪🇸',group:'E'},{id:'POR',name:'Portugal',flag:'🇵🇹',group:'E'},
+  {id:'SCO',name:'Scotland',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',group:'E'},{id:'SEN',name:'Senegal',flag:'🇸🇳',group:'E'},
+  {id:'GER',name:'Germany',flag:'🇩🇪',group:'F'},{id:'NED',name:'Netherlands',flag:'🇳🇱',group:'F'},
+  {id:'AUT',name:'Austria',flag:'🇦🇹',group:'F'},{id:'COD',name:'DR Congo',flag:'🇨🇩',group:'F'},
+  {id:'ENG',name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',group:'G'},{id:'SUI',name:'Switzerland',flag:'🇨🇭',group:'G'},
+  {id:'DEN',name:'Denmark',flag:'🇩🇰',group:'G'},{id:'EGY',name:'Egypt',flag:'🇪🇬',group:'G'},
+  {id:'COL',name:'Colombia',flag:'🇨🇴',group:'H'},{id:'ECU',name:'Ecuador',flag:'🇪🇨',group:'H'},
+  {id:'CRC',name:'Costa Rica',flag:'🇨🇷',group:'H'},{id:'CMR',name:'Cameroon',flag:'🇨🇲',group:'H'},
+  {id:'JPN',name:'Japan',flag:'🇯🇵',group:'I'},{id:'KOR',name:'South Korea',flag:'🇰🇷',group:'I'},
+  {id:'AUS',name:'Australia',flag:'🇦🇺',group:'I'},{id:'IRI',name:'Iran',flag:'🇮🇷',group:'I'},
+  {id:'ITA',name:'Italy',flag:'🇮🇹',group:'J'},{id:'CRO',name:'Croatia',flag:'🇭🇷',group:'J'},
+  {id:'SVK',name:'Slovakia',flag:'🇸🇰',group:'J'},{id:'NGA',name:'Nigeria',flag:'🇳🇬',group:'J'},
+  {id:'POL',name:'Poland',flag:'🇵🇱',group:'K'},{id:'UKR',name:'Ukraine',flag:'🇺🇦',group:'K'},
+  {id:'TUR',name:'Turkey',flag:'🇹🇷',group:'K'},{id:'NZL',name:'New Zealand',flag:'🇳🇿',group:'K'},
+  {id:'SAU',name:'Saudi Arabia',flag:'🇸🇦',group:'L'},{id:'QAT',name:'Qatar',flag:'🇶🇦',group:'L'},
+  {id:'GHA',name:'Ghana',flag:'🇬🇭',group:'L'},{id:'HON',name:'Honduras',flag:'🇭🇳',group:'L'},
+];
+const TEAM_MAP = Object.fromEntries(TEAMS.map(t => [t.id, t]));
+
+// Snake pick order for 7 managers, 48 picks
+function buildPickOrder() {
+  const order = [];
+  for (let round = 0; round < 7; round++) {
+    const fwd = Array.from({length:7},(_,i)=>i);
+    const row = round%2===0 ? fwd : fwd.reverse();
+    order.push(...row);
+  }
+  return order.slice(0,48);
+}
+const PICK_ORDER = buildPickOrder();
+
+const PTS = {groupW:3,groupD:1,r32:5,r16:8,qf:13,sf:21,champion:34};
+</script>
+
+<!-- ─── HTML STRUCTURE ─────────────────────────────────────────────────────── -->
+
+<header>
+  <div class="logo">World Cup <em>2026</em> Draft</div>
+  <div class="hright">
+    <span class="sync-dot" id="syncDot"></span>
+    <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="syncLabel">Connecting...</span>
+    <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Sync</button>
+  </div>
+</header>
+
+<!-- MANAGER PICKER SCREEN (shown before choosing who you are) -->
+<div id="screen-pick" class="view active">
+  <div class="wc-trophy">🏆</div>
+  <div class="pick-title">Who are you?</div>
+  <div class="pick-sub">Tap your name to enter the draft</div>
+  <div class="manager-btns" id="mgrBtns"></div>
+  <div style="margin-top:32px">
+    <button class="btn btn-out btn-sm" onclick="enterAs('commissioner')">⚙ Commissioner View</button>
+  </div>
+</div>
+
+<!-- MAIN APP (shown after picking manager) -->
+<div id="screen-app" class="view">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('draft',this)">⚡ Draft</button>
+    <button class="tab" onclick="showTab('board',this)">📋 Board</button>
+    <button class="tab" onclick="showTab('leaderboard',this)">🏆 Standings</button>
+    <button class="tab" onclick="showTab('teams',this)">📊 Teams</button>
+    <button class="tab" onclick="showTab('setup',this)">⚙ Setup</button>
+  </div>
+
+  <!-- DRAFT TAB -->
+  <div id="tab-draft" class="view active main">
+    <div id="clockBanner" class="clock-banner waiting">
+      <div>
+        <div class="clock-name" id="clockName">Loading...</div>
+        <div class="clock-sub" id="clockSub">—</div>
+      </div>
+      <span class="clock-tag wait-tag" id="clockTag">WAITING</span>
+    </div>
+
+    <div id="draftDone" class="complete-banner" style="display:none">
+      <h2>🎉 Draft Complete!</h2>
+      <p style="color:var(--muted);margin-top:6px;font-size:14px">Check Standings — scores update automatically during the tournament.</p>
+    </div>
+
+    <div id="teamPickerWrap">
+      <div class="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input type="text" id="teamSearch" placeholder="Search teams..." oninput="renderTeams()"/>
+      </div>
+      <div class="gfilters" id="gfilters"></div>
+      <div class="team-grid" id="teamGrid"></div>
+    </div>
+  </div>
+
+  <!-- BOARD TAB -->
+  <div id="tab-board" class="view main">
+    <div class="card">
+      <div class="card-title">Draft Board</div>
+      <div class="board-grid" id="boardGrid"></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD TAB -->
+  <div id="tab-leaderboard" class="view main">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">🏆 Standings</div>
+        <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Refresh</button>
+      </div>
+      <div class="lb-list" id="lbList"></div>
+    </div>
+  </div>
+
+  <!-- TEAMS TAB -->
+  <div id="tab-teams" class="view main">
+    <div class="card">
+      <div class="card-title">All 48 Teams</div>
+      <table class="ttable">
+        <thead><tr><th>Team</th><th>Owner</th><th>Stage</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr></thead>
+        <tbody id="teamsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETUP TAB -->
+  <div id="tab-setup" class="view main">
+    <div class="setup-grid">
+      <div class="card">
+        <div class="card-title">👥 Managers</div>
+        <div class="alert alert-info" style="font-size:12px">
+          <b>Commissioner only.</b> Add all 7 manager names, then hit Save & Start Draft. Each person gets a unique link to pick on their phone.
+        </div>
+        <div class="mgr-inputs" id="mgrInputs"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold btn-sm" onclick="saveManagers()">💾 Save & Start Draft</button>
+          <button class="btn btn-out btn-sm" onclick="shuffleManagers()">🔀 Randomize Order</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📡 Live Scores API</div>
+        <div class="alert alert-info" style="font-size:12px">
+          Free key at <a href="https://www.football-data.org/client/register" target="_blank" style="color:var(--gold)">football-data.org</a> (30 seconds). Enables auto live score sync.
+        </div>
+        <input type="password" id="apiKeyIn" placeholder="Paste API key..." style="margin-bottom:8px"/>
+        <button class="btn btn-gold btn-sm" onclick="saveApiKey()">Save Key</button>
+        <div style="margin-top:16px">
+          <div class="pts-chips">
+            <div class="pc">Group W <b>+3</b></div>
+            <div class="pc">Group D <b>+1</b></div>
+            <div class="pc">R32 <b>+5</b></div>
+            <div class="pc">R16 <b>+8</b></div>
+            <div class="pc">QF <b>+13</b></div>
+            <div class="pc">SF <b>+21</b></div>
+            <div class="pc">🏆 <b>+34</b></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Share this link with your group:</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--navy2);border:1px solid var(--border);border-radius:7px;padding:10px;word-break:break-all;color:var(--muted)" id="shareLink">—</div>
+          <button class="btn btn-out btn-sm" style="margin-top:8px" onclick="copyLink()">📋 Copy Link</button>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <button class="btn btn-red btn-sm" onclick="resetAll()">⚠ Reset Draft</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM PICK MODAL -->
+<div class="modal-bg" id="modal" style="display:none">
+  <div class="modal">
+    <div class="modal-flag" id="modalFlag">🌍</div>
+    <div class="modal-title" id="modalName">—</div>
+    <div class="modal-sub" id="modalSub">Confirm your pick?</div>
+    <div class="modal-btns">
+      <button class="btn btn-out" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmPick()">✓ Draft This Team</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APP LOGIC ──────────────────────────────────────────────────────────── -->
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let app = {
+  myManagerId: null,   // which manager am I (db id)
+  mySlug: null,
+  managers: [],        // [{id, name, slug, draft_position}]
+  picks: [],           // [{id, manager_id, team_id, pick_number}]
+  scores: {},          // teamId -> {wins,draws,losses,stage,points}
+  draftState: { current_pick:1, draft_started:false, draft_complete:false },
+  apiKey: localStorage.getItem('wc_apikey') || '',
+  pendingTeamId: null,
+  activeGroup: 'ALL',
+  localMgrs: ['Kyle','','','','','',''],
+};
+
+// Detect ?m=slug in URL
+const urlParams = new URLSearchParams(window.location.search);
+const urlSlug = urlParams.get('m');
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+async function init() {
+  setSync('connecting');
+  await loadAll();
+  setSync('live');
+
+  // Set up polling for real-time updates (every 4s)
+  setInterval(async () => {
+    await loadAll();
+    renderAll();
+  }, 4000);
+
+  // If URL has ?m=slug, auto-enter as that manager
+  if (urlSlug) {
+    const mgr = app.managers.find(m => m.slug === urlSlug);
+    if (mgr) { enterAs(mgr.id); return; }
+  }
+
+  // Show manager picker
+  renderManagerPicker();
+}
+
+async function loadAll() {
+  try {
+    const q1 = new SupabaseQuery(sb, 'managers');
+    const {data: mgrs} = await q1.select().order('draft_position',{ascending:true}).execute();
+    if (mgrs) app.managers = mgrs;
+
+    const q2 = new SupabaseQuery(sb, 'picks');
+    const {data: picks} = await q2.select().order('pick_number',{ascending:true}).execute();
+    if (picks) app.picks = picks;
+
+    const q3 = new SupabaseQuery(sb, 'draft_state');
+    const {data: ds} = await q3.select().execute();
+    if (ds && ds[0]) app.draftState = ds[0];
+
+    const q4 = new SupabaseQuery(sb, 'team_scores');
+    const {data: scores} = await q4.select().execute();
+    if (scores) scores.forEach(s => app.scores[s.team_id] = s);
+
+    setSync('live');
+  } catch(e) {
+    setSync('error');
+  }
+}
+
+function setSync(state) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if (state === 'live') { dot.className='sync-dot live'; lbl.textContent='Live'; }
+  else if (state === 'connecting') { dot.className='sync-dot'; lbl.textContent='Connecting...'; }
+  else { dot.className='sync-dot'; lbl.style.color='var(--red)'; lbl.textContent='Offline'; }
+}
+
+// ── SCREENS ────────────────────────────────────────────────────────────────
+function renderManagerPicker() {
+  const el = document.getElementById('mgrBtns');
+  if (app.managers.length === 0) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:14px;text-align:center;padding:20px">No managers set up yet.<br><br><button class="btn btn-gold btn-sm" onclick="enterAs('commissioner')">⚙ Set Up Draft</button></div>`;
+    return;
+  }
+  el.innerHTML = app.managers.map(m => `
+    <button class="mgr-btn" onclick="enterAs(${m.id})">
+      <span style="font-size:20px">👤</span>
+      <span>
+        <span>${m.name}</span>
+        <span class="draft-pos">Pick #${m.draft_position+1}</span>
+      </span>
+    </button>`).join('');
+}
+
+function enterAs(mgrId) {
+  if (mgrId === 'commissioner') {
+    app.myManagerId = null;
+    app.mySlug = null;
+  } else {
+    const mgr = app.managers.find(m => m.id === mgrId);
+    app.myManagerId = mgrId;
+    app.mySlug = mgr?.slug;
+    // Update URL without reload
+    const newUrl = window.location.pathname + '?m=' + (mgr?.slug || mgrId);
+    window.history.replaceState({}, '', newUrl);
+  }
+  document.getElementById('screen-pick').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  document.getElementById('shareLink').textContent = window.location.href;
+  renderAll();
+}
+
+function renderAll() {
+  renderClock();
+  renderTeams();
+  renderBoard();
+  renderLeaderboard();
+  renderTeamsTable();
+  renderSetupManagers();
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('#screen-app .view.main').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn && btn.classList.add('active');
+  if (name==='leaderboard') renderLeaderboard();
+  if (name==='teams') renderTeamsTable();
+  if (name==='board') renderBoard();
+}
+
+// ── DRAFT CLOCK ────────────────────────────────────────────────────────────
+function renderClock() {
+  const pickIdx = app.picks.length;
+  const isDone = pickIdx >= 48 || app.draftState.draft_complete;
+
+  document.getElementById('draftDone').style.display = isDone ? '' : 'none';
+  document.getElementById('teamPickerWrap').style.display = isDone ? 'none' : '';
+  document.getElementById('clockBanner').style.display = isDone ? 'none' : '';
+
+  if (!isDone && app.managers.length > 0) {
+    const managerPos = PICK_ORDER[pickIdx];
+    const onClockMgr = app.managers.find(m => m.draft_position === managerPos);
+    const isMe = onClockMgr && onClockMgr.id === app.myManagerId;
+    const name = onClockMgr?.name || '—';
+
+    document.getElementById('clockName').textContent = isMe ? `🟡 Your Pick, ${name}!` : `${name} is picking...`;
+    document.getElementById('clockSub').textContent = `Pick #${pickIdx+1} of 48 · Round ${Math.floor(pickIdx/7)+1}`;
+
+    const banner = document.getElementById('clockBanner');
+    const tag = document.getElementById('clockTag');
+    if (isMe) {
+      banner.className = 'clock-banner yours';
+      tag.className = 'clock-tag yours-tag'; tag.textContent = "YOUR PICK";
+    } else {
+      banner.className = 'clock-banner waiting';
+      tag.className = 'clock-tag wait-tag'; tag.textContent = "WAITING";
+    }
+
+    // Show/hide team picker based on whether it's my turn
+    const canPick = isMe || app.myManagerId === null;
+    document.getElementById('teamPickerWrap').style.opacity = canPick ? '1' : '0.4';
+    document.getElementById('teamPickerWrap').style.pointerEvents = canPick ? '' : 'none';
+  }
+}
+
+// ── TEAM GRID ──────────────────────────────────────────────────────────────
+function renderGroupFilters() {
+  const groups = ['ALL','A','B','C','D','E','F','G','H','I','J','K','L'];
+  const el = document.getElementById('gfilters');
+  el.innerHTML = groups.map(g => `
+    <button class="gf ${app.activeGroup===g?'on':''}" onclick="setGroup('${g}')">${g==='ALL'?'All':'Grp '+g}</button>
+  `).join('');
+}
+
+function setGroup(g) { app.activeGroup = g; renderGroupFilters(); renderTeams(); }
+
+function renderTeams() {
+  renderGroupFilters();
+  const q = (document.getElementById('teamSearch')?.value||'').toLowerCase();
+  const taken = new Set(app.picks.map(p => p.team_id));
+  const el = document.getElementById('teamGrid');
+  if (!el) return;
+
+  const list = TEAMS.filter(t =>
+    (app.activeGroup==='ALL' || t.group===app.activeGroup) &&
+    (!q || t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q))
+  );
+
+  el.innerHTML = list.map(t => `
+    <div class="tcard ${taken.has(t.id)?'taken':''}" onclick="${taken.has(t.id)?'':''}" onpointerup="${taken.has(t.id)?'':'openModal(\''+t.id+'\')'}">
+      <span class="tflag">${t.flag}</span>
+      <div><div class="tname">${t.name}</div><div class="tgrp">Grp ${t.group}</div></div>
+    </div>`).join('');
+}
+
+// ── PICK MODAL ─────────────────────────────────────────────────────────────
+function openModal(teamId) {
+  const t = TEAM_MAP[teamId];
+  app.pendingTeamId = teamId;
+  document.getElementById('modalFlag').textContent = t.flag;
+  document.getElementById('modalName').textContent = t.name;
+  const pickIdx = app.picks.length;
+  const managerPos = PICK_ORDER[pickIdx];
+  const onClockMgr = app.managers.find(m => m.draft_position === managerPos);
+  document.getElementById('modalSub').textContent = `Drafting for ${onClockMgr?.name||'?'} · Pick #${pickIdx+1}`;
+  document.getElementById('modal').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modal').style.display='none'; app.pendingTeamId=null; }
+
+async function confirmPick() {
+  const teamId = app.pendingTeamId;
+  if (!teamId) return;
+  closeModal();
+
+  const pickIdx = app.picks.length;
+  if (pickIdx >= 48) return;
+  const managerPos = PICK_ORDER[pickIdx];
+  const onClockMgr = app.managers.find(m => m.draft_position === managerPos);
+  if (!onClockMgr) return;
+
+  // Check not already taken
+  if (app.picks.some(p => p.team_id === teamId)) return;
+
+  const q = new SupabaseQuery(sb, 'picks');
+  await q.insert({ manager_id: onClockMgr.id, team_id: teamId, pick_number: pickIdx+1 });
+
+  // Update draft state
+  const nextPick = pickIdx + 2;
+  const isDone = nextPick > 48;
+  const qd = new SupabaseQuery(sb, 'draft_state');
+  qd._filters = ['id=eq.1'];
+  await qd.update({ current_pick: nextPick, draft_complete: isDone, updated_at: new Date().toISOString() });
+
+  await loadAll();
+  renderAll();
+}
+
+// ── DRAFT BOARD ────────────────────────────────────────────────────────────
+function renderBoard() {
+  const el = document.getElementById('boardGrid');
+  if (!el) return;
+  const pickIdx = app.picks.length;
+  const currentPos = pickIdx < 48 ? PICK_ORDER[pickIdx] : -1;
+
+  el.innerHTML = app.managers.map(m => {
+    const myPicks = app.picks.filter(p => p.manager_id === m.id);
+    const isOnClock = m.draft_position === currentPos;
+    const isMe = m.id === app.myManagerId;
+    const cls = isOnClock ? 'brow onclock' : isMe ? 'brow me' : 'brow';
+    return `<div class="${cls}">
+      <div class="brow-top">
+        <span class="brow-name">${m.name}${isOnClock?' ⏰':''}</span>
+        <span class="brow-count">${myPicks.length} picks</span>
+      </div>
+      <div class="chips">
+        ${myPicks.map(p => {
+          const t = TEAM_MAP[p.team_id];
+          return t ? `<span class="chip">${t.flag} ${t.name}</span>` : '';
+        }).join('')}
+        ${myPicks.length===0?'<span style="font-size:11px;color:var(--muted)">No picks yet</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LEADERBOARD ────────────────────────────────────────────────────────────
+function getTeamPts(teamId) { return app.scores[teamId]?.points || 0; }
+
+function renderLeaderboard() {
+  const el = document.getElementById('lbList');
+  if (!el) return;
+  const rows = app.managers.map(m => {
+    const myPicks = app.picks.filter(p => p.manager_id === m.id);
+    const pts = myPicks.reduce((s,p) => s + getTeamPts(p.team_id), 0);
+    const teams = myPicks.map(p => TEAM_MAP[p.team_id]).filter(Boolean);
+    return { ...m, pts, teams };
+  }).sort((a,b) => b.pts - a.pts);
+
+  const rc = (i) => i===0?'r1':i===1?'r2':i===2?'r3':'';
+  const rn = (i) => ['1st','2nd','3rd'][i] || `${i+1}th`;
+
+  el.innerHTML = rows.map((m,i) => `
+    <div class="lb-row">
+      <div class="lb-rank ${rc(i)}">${rn(i)}</div>
+      <div class="lb-info">
+        <div class="lb-name">${m.name}${m.id===app.myManagerId?' 👤':''}</div>
+        <div class="lb-teams">${m.teams.map(t=>t.flag+' '+t.name).join(' · ')||'No picks yet'}</div>
+      </div>
+      <div><div class="lb-pts">${m.pts}</div><div class="lb-ptsl">PTS</div></div>
+    </div>`).join('');
+}
+
+// ── TEAMS TABLE ────────────────────────────────────────────────────────────
+function renderTeamsTable() {
+  const body = document.getElementById('teamsBody');
+  if (!body) return;
+  const pickMap = new Map(app.picks.map(p => [p.team_id, p.manager_id]));
+  body.innerHTML = TEAMS.map(t => {
+    const mid = pickMap.get(t.id);
+    const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'?') : '—';
+    const s = app.scores[t.id] || {wins:0,draws:0,losses:0,stage:'GROUP',points:0};
+    const stg = s.stage||'GROUP';
+    const cls = stg==='ELIMINATED'?'sbadge s-out':stg==='GROUP'?'sbadge s-group':'sbadge s-alive';
+    return `<tr>
+      <td>${t.flag} ${t.name}</td>
+      <td>${owner}</td>
+      <td><span class="${cls}">${stg}</span></td>
+      <td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td>
+      <td style="color:var(--gold);font-weight:700">${s.points}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SETUP ──────────────────────────────────────────────────────────────────
+function renderSetupManagers() {
+  const el = document.getElementById('mgrInputs');
+  if (!el) return;
+  // Sync localMgrs from DB if managers exist and localMgrs looks empty
+  if (app.managers.length > 0 && app.localMgrs.filter(n=>n.trim()).length === 0) {
+    app.localMgrs = app.managers.map(m => m.name);
+    while (app.localMgrs.length < 7) app.localMgrs.push('');
+  }
+  const names = app.localMgrs;
+
+  el.innerHTML = Array.from({length:7},(_,i) => `
+    <div class="mgr-row">
+      <span class="pos-badge">${i+1}</span>
+      <input type="text" value="${names[i]||''}" placeholder="Manager ${i+1}" oninput="app.localMgrs[${i}]=this.value"/>
+    </div>`).join('');
+  document.getElementById('apiKeyIn').value = app.apiKey;
+}
+
+function shuffleManagers() {
+  const filled = app.localMgrs.filter(n=>n.trim());
+  for (let i=filled.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [filled[i],filled[j]]=[filled[j],filled[i]];
+  }
+  let fi=0;
+  app.localMgrs = app.localMgrs.map(n => n.trim() ? filled[fi++] : n);
+  renderSetupManagers();
+}
+
+async function saveManagers() {
+  const names = app.localMgrs.filter(n=>n.trim());
+  if (names.length < 2) { alert('Add at least 2 names.'); return; }
+  if (!confirm(`Save ${names.length} managers and start the draft?\n\n${names.join(', ')}\n\nThis will clear any existing managers.`)) return;
+
+  // Delete all existing picks first (FK constraint), then managers
+  await fetch(`${SUPABASE_URL}/rest/v1/picks?pick_number=gte.1`, { method:'DELETE', headers: sb.headers() });
+  await fetch(`${SUPABASE_URL}/rest/v1/managers?id=gte.1`, { method:'DELETE', headers: sb.headers() });
+
+  // Insert managers
+  for (let i=0; i<names.length; i++) {
+    const slug = names[i].toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '-' + i;
+    const q = new SupabaseQuery(sb, 'managers');
+    await q.insert({ name: names[i], slug, draft_position: i });
+  }
+
+  // Start draft
+  const qd = new SupabaseQuery(sb, 'draft_state');
+  qd._filters = ['id=eq.1'];
+  await qd.update({ draft_started: true, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
+
+  await loadAll();
+  renderManagerPicker();
+  renderAll();
+  alert('✅ Draft started! Copy the link from Setup and send it to your group.');
+}
+
+function saveApiKey() {
+  app.apiKey = document.getElementById('apiKeyIn').value.trim();
+  localStorage.setItem('wc_apikey', app.apiKey);
+  syncScores();
+}
+
+async function syncScores() {
+  if (!app.apiKey) return;
+  try {
+    const res = await fetch('https://api.football-data.org/v4/competitions/2000/standings', {
+      headers: { 'X-Auth-Token': app.apiKey }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.standings) return;
+
+    const upserts = [];
+    data.standings.forEach(s => {
+      if (s.type !== 'TOTAL') return;
+      s.table.forEach(entry => {
+        const team = TEAMS.find(t => t.id === entry.team.tla || t.name === entry.team.name);
+        if (!team) return;
+        const pts = entry.won*PTS.groupW + entry.draw*PTS.groupD;
+        upserts.push({ team_id: team.id, wins: entry.won, draws: entry.draw, losses: entry.lost, stage: 'GROUP', points: pts, updated_at: new Date().toISOString() });
+      });
+    });
+
+    if (upserts.length > 0) {
+      const q = new SupabaseQuery(sb, 'team_scores');
+      await q.upsert(upserts);
+    }
+
+    await loadAll();
+    renderAll();
+    document.getElementById('syncLabel').textContent = 'Synced ' + new Date().toLocaleTimeString();
+  } catch(e) { console.error('Sync failed', e); }
+}
+
+async function resetAll() {
+  if (!confirm('⚠️ Reset ALL draft data?\n\nThis deletes all picks and managers. This CANNOT be undone.')) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/picks?pick_number=gte.1`, { method:'DELETE', headers: sb.headers() });
+    await fetch(`${SUPABASE_URL}/rest/v1/managers?id=gte.1`, { method:'DELETE', headers: sb.headers() });
+    await fetch(`${SUPABASE_URL}/rest/v1/team_scores?points=gte.0`, { method:'DELETE', headers: sb.headers() });
+    const qd = new SupabaseQuery(sb, 'draft_state');
+    qd._filters = ['id=eq.1'];
+    await qd.update({ draft_started: false, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
+    app.localMgrs = ['','','','','','',''];
+    await loadAll();
+    document.getElementById('screen-app').classList.remove('active');
+    document.getElementById('screen-pick').classList.add('active');
+    renderManagerPicker();
+    alert('Draft reset. Set up managers again to start fresh.');
+  } catch(e) {
+    alert('Reset failed. Try again or clear from your Supabase dashboard.');
+  }
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'));
+}
+
+// ── START ──────────────────────────────────────────────────────────────────
+init();
+</script>
+
+<footer>World Cup 2026 Draft · Powered by Supabase · Scores via football-data.org</footer>
+</body>
+</html>
