@@ -572,6 +572,25 @@ const PTS = {groupW:3,groupD:1};
 
 <!-- ─── APP LOGIC ──────────────────────────────────────────────────────────── -->
 <script>
+// ── SELF-UPDATE ────────────────────────────────────────────────────────────
+// Browsers (especially desktop) cache this page hard. Compare the deployed
+// version stamp against ours and reload once when a new one ships.
+const APP_VERSION = 'v7';
+async function checkForUpdate() {
+  try {
+    const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
+    if (!res.ok) return;
+    const m = (await res.text()).match(/APP_VERSION = '([^']+)'/);
+    if (m && m[1] !== APP_VERSION && !sessionStorage.getItem('wc_reloaded_'+m[1])) {
+      sessionStorage.setItem('wc_reloaded_'+m[1], '1');
+      window.location.reload();
+    }
+  } catch(_) {}
+}
+checkForUpdate();
+setInterval(checkForUpdate, 300000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+
 // ── STATE ──────────────────────────────────────────────────────────────────
 let app = {
   myManagerId: null,   // which manager am I (db id)
