@@ -127,6 +127,12 @@ header{
 }
 .team-grid::-webkit-scrollbar{width:3px}
 .team-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.grp-head{
+  grid-column:1/-1;
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;
+  color:var(--gold);padding:10px 2px 3px;border-bottom:1px solid var(--border);
+}
+.grp-head:first-child{padding-top:2px}
 .tcard{
   background:var(--navy2);border:1px solid var(--border);border-radius:8px;
   padding:9px 11px;cursor:pointer;transition:all .15s;
@@ -345,38 +351,42 @@ const sb = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON);
 <!-- ─── TEAMS DATA ─────────────────────────────────────────────────────────── -->
 <script>
 const TEAMS = [
-  {id:'USA',name:'United States',flag:'🇺🇸',group:'A'},{id:'MEX',name:'Mexico',flag:'🇲🇽',group:'A'},
-  {id:'CAN',name:'Canada',flag:'🇨🇦',group:'A'},{id:'PAN',name:'Panama',flag:'🇵🇦',group:'A'},
-  {id:'ARG',name:'Argentina',flag:'🇦🇷',group:'B'},{id:'CHI',name:'Chile',flag:'🇨🇱',group:'B'},
-  {id:'PER',name:'Peru',flag:'🇵🇪',group:'B'},{id:'BOL',name:'Bolivia',flag:'🇧🇴',group:'B'},
-  {id:'BRA',name:'Brazil',flag:'🇧🇷',group:'C'},{id:'URU',name:'Uruguay',flag:'🇺🇾',group:'C'},
-  {id:'PAR',name:'Paraguay',flag:'🇵🇾',group:'C'},{id:'VEN',name:'Venezuela',flag:'🇻🇪',group:'C'},
-  {id:'FRA',name:'France',flag:'🇫🇷',group:'D'},{id:'BEL',name:'Belgium',flag:'🇧🇪',group:'D'},
-  {id:'WAL',name:'Wales',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',group:'D'},{id:'MAR',name:'Morocco',flag:'🇲🇦',group:'D'},
-  {id:'ESP',name:'Spain',flag:'🇪🇸',group:'E'},{id:'POR',name:'Portugal',flag:'🇵🇹',group:'E'},
-  {id:'SCO',name:'Scotland',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',group:'E'},{id:'SEN',name:'Senegal',flag:'🇸🇳',group:'E'},
-  {id:'GER',name:'Germany',flag:'🇩🇪',group:'F'},{id:'NED',name:'Netherlands',flag:'🇳🇱',group:'F'},
-  {id:'AUT',name:'Austria',flag:'🇦🇹',group:'F'},{id:'COD',name:'DR Congo',flag:'🇨🇩',group:'F'},
-  {id:'ENG',name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',group:'G'},{id:'SUI',name:'Switzerland',flag:'🇨🇭',group:'G'},
-  {id:'DEN',name:'Denmark',flag:'🇩🇰',group:'G'},{id:'EGY',name:'Egypt',flag:'🇪🇬',group:'G'},
-  {id:'COL',name:'Colombia',flag:'🇨🇴',group:'H'},{id:'ECU',name:'Ecuador',flag:'🇪🇨',group:'H'},
-  {id:'CRC',name:'Costa Rica',flag:'🇨🇷',group:'H'},{id:'CMR',name:'Cameroon',flag:'🇨🇲',group:'H'},
-  {id:'JPN',name:'Japan',flag:'🇯🇵',group:'I'},{id:'KOR',name:'South Korea',flag:'🇰🇷',group:'I'},
-  {id:'AUS',name:'Australia',flag:'🇦🇺',group:'I'},{id:'IRI',name:'Iran',flag:'🇮🇷',group:'I'},
-  {id:'ITA',name:'Italy',flag:'🇮🇹',group:'J'},{id:'CRO',name:'Croatia',flag:'🇭🇷',group:'J'},
-  {id:'SVK',name:'Slovakia',flag:'🇸🇰',group:'J'},{id:'NGA',name:'Nigeria',flag:'🇳🇬',group:'J'},
-  {id:'POL',name:'Poland',flag:'🇵🇱',group:'K'},{id:'UKR',name:'Ukraine',flag:'🇺🇦',group:'K'},
-  {id:'TUR',name:'Turkey',flag:'🇹🇷',group:'K'},{id:'NZL',name:'New Zealand',flag:'🇳🇿',group:'K'},
-  {id:'SAU',name:'Saudi Arabia',flag:'🇸🇦',group:'L'},{id:'QAT',name:'Qatar',flag:'🇶🇦',group:'L'},
-  {id:'GHA',name:'Ghana',flag:'🇬🇭',group:'L'},{id:'HON',name:'Honduras',flag:'🇭🇳',group:'L'},
+  {id:'USA',name:'United States',flag:'🇺🇸',group:'A',rank:14},{id:'MEX',name:'Mexico',flag:'🇲🇽',group:'A',rank:15},
+  {id:'CAN',name:'Canada',flag:'🇨🇦',group:'A',rank:27},{id:'PAN',name:'Panama',flag:'🇵🇦',group:'A',rank:33},
+  {id:'ARG',name:'Argentina',flag:'🇦🇷',group:'B',rank:2},{id:'CHI',name:'Chile',flag:'🇨🇱',group:'B',rank:56},
+  {id:'PER',name:'Peru',flag:'🇵🇪',group:'B',rank:42},{id:'BOL',name:'Bolivia',flag:'🇧🇴',group:'B',rank:76},
+  {id:'BRA',name:'Brazil',flag:'🇧🇷',group:'C',rank:5},{id:'URU',name:'Uruguay',flag:'🇺🇾',group:'C',rank:16},
+  {id:'PAR',name:'Paraguay',flag:'🇵🇾',group:'C',rank:39},{id:'VEN',name:'Venezuela',flag:'🇻🇪',group:'C',rank:50},
+  {id:'FRA',name:'France',flag:'🇫🇷',group:'D',rank:3},{id:'BEL',name:'Belgium',flag:'🇧🇪',group:'D',rank:8},
+  {id:'WAL',name:'Wales',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',group:'D',rank:30},{id:'MAR',name:'Morocco',flag:'🇲🇦',group:'D',rank:11},
+  {id:'ESP',name:'Spain',flag:'🇪🇸',group:'E',rank:1},{id:'POR',name:'Portugal',flag:'🇵🇹',group:'E',rank:6},
+  {id:'SCO',name:'Scotland',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',group:'E',rank:38},{id:'SEN',name:'Senegal',flag:'🇸🇳',group:'E',rank:19},
+  {id:'GER',name:'Germany',flag:'🇩🇪',group:'F',rank:9},{id:'NED',name:'Netherlands',flag:'🇳🇱',group:'F',rank:7},
+  {id:'AUT',name:'Austria',flag:'🇦🇹',group:'F',rank:24},{id:'COD',name:'DR Congo',flag:'🇨🇩',group:'F',rank:60},
+  {id:'ENG',name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',group:'G',rank:4},{id:'SUI',name:'Switzerland',flag:'🇨🇭',group:'G',rank:17},
+  {id:'DEN',name:'Denmark',flag:'🇩🇰',group:'G',rank:20},{id:'EGY',name:'Egypt',flag:'🇪🇬',group:'G',rank:34},
+  {id:'COL',name:'Colombia',flag:'🇨🇴',group:'H',rank:13},{id:'ECU',name:'Ecuador',flag:'🇪🇨',group:'H',rank:23},
+  {id:'CRC',name:'Costa Rica',flag:'🇨🇷',group:'H',rank:54},{id:'CMR',name:'Cameroon',flag:'🇨🇲',group:'H',rank:49},
+  {id:'JPN',name:'Japan',flag:'🇯🇵',group:'I',rank:18},{id:'KOR',name:'South Korea',flag:'🇰🇷',group:'I',rank:22},
+  {id:'AUS',name:'Australia',flag:'🇦🇺',group:'I',rank:25},{id:'IRI',name:'Iran',flag:'🇮🇷',group:'I',rank:21},
+  {id:'ITA',name:'Italy',flag:'🇮🇹',group:'J',rank:12},{id:'CRO',name:'Croatia',flag:'🇭🇷',group:'J',rank:10},
+  {id:'SVK',name:'Slovakia',flag:'🇸🇰',group:'J',rank:46},{id:'NGA',name:'Nigeria',flag:'🇳🇬',group:'J',rank:41},
+  {id:'POL',name:'Poland',flag:'🇵🇱',group:'K',rank:31},{id:'UKR',name:'Ukraine',flag:'🇺🇦',group:'K',rank:28},
+  {id:'TUR',name:'Turkey',flag:'🇹🇷',group:'K',rank:26},{id:'NZL',name:'New Zealand',flag:'🇳🇿',group:'K',rank:86},
+  {id:'SAU',name:'Saudi Arabia',flag:'🇸🇦',group:'L',rank:59},{id:'QAT',name:'Qatar',flag:'🇶🇦',group:'L',rank:51},
+  {id:'GHA',name:'Ghana',flag:'🇬🇭',group:'L',rank:73},{id:'HON',name:'Honduras',flag:'🇭🇳',group:'L',rank:75},
 ];
 const TEAM_MAP = Object.fromEntries(TEAMS.map(t => [t.id, t]));
 
-// Snake pick order for 7 managers, 48 picks
+const MGR_COUNT = 6;
+const DEFAULT_MGRS = ['Kochtanek','Geiger','Hoskins','Weagley','Malaney','Hogan'];
+const COMMISH_PW = 'kurtrambus';
+
+// Snake pick order: 6 managers × 8 rounds = 48 picks
 function buildPickOrder() {
   const order = [];
-  for (let round = 0; round < 7; round++) {
-    const fwd = Array.from({length:7},(_,i)=>i);
+  for (let round = 0; round < 8; round++) {
+    const fwd = Array.from({length:MGR_COUNT},(_,i)=>i);
     const row = round%2===0 ? fwd : fwd.reverse();
     order.push(...row);
   }
@@ -384,7 +394,8 @@ function buildPickOrder() {
 }
 const PICK_ORDER = buildPickOrder();
 
-const PTS = {groupW:3,groupD:1,r32:5,r16:8,qf:13,sf:21,champion:34};
+// Scoring: group stage only — 3 for a win, 1 for a draw, 0 for a loss
+const PTS = {groupW:3,groupD:1};
 </script>
 
 <!-- ─── HTML STRUCTURE ─────────────────────────────────────────────────────── -->
@@ -416,7 +427,7 @@ const PTS = {groupW:3,groupD:1,r32:5,r16:8,qf:13,sf:21,champion:34};
     <button class="tab" onclick="showTab('board',this)">📋 Board</button>
     <button class="tab" onclick="showTab('leaderboard',this)">🏆 Standings</button>
     <button class="tab" onclick="showTab('teams',this)">📊 Teams</button>
-    <button class="tab" onclick="showTab('setup',this)">⚙ Setup</button>
+    <button class="tab" id="tabSetupBtn" style="display:none" onclick="showTab('setup',this)">⚙ Setup</button>
   </div>
 
   <!-- DRAFT TAB -->
@@ -466,9 +477,9 @@ const PTS = {groupW:3,groupD:1,r32:5,r16:8,qf:13,sf:21,champion:34};
   <!-- TEAMS TAB -->
   <div id="tab-teams" class="view main">
     <div class="card">
-      <div class="card-title">All 48 Teams</div>
+      <div class="card-title">All 48 Teams · By Group</div>
       <table class="ttable">
-        <thead><tr><th>Team</th><th>Owner</th><th>Stage</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr></thead>
+        <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr></thead>
         <tbody id="teamsBody"></tbody>
       </table>
     </div>
@@ -480,7 +491,7 @@ const PTS = {groupW:3,groupD:1,r32:5,r16:8,qf:13,sf:21,champion:34};
       <div class="card">
         <div class="card-title">👥 Managers</div>
         <div class="alert alert-info" style="font-size:12px">
-          <b>Commissioner only.</b> Add all 7 manager names, then hit Save & Start Draft. Each person gets a unique link to pick on their phone.
+          <b>Commissioner only.</b> All 6 managers are pre-filled. Randomize the order if you want, then hit Save & Start Draft and share the link with the group.
         </div>
         <div class="mgr-inputs" id="mgrInputs"></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
@@ -497,13 +508,9 @@ const PTS = {groupW:3,groupD:1,r32:5,r16:8,qf:13,sf:21,champion:34};
         <button class="btn btn-gold btn-sm" onclick="saveApiKey()">Save Key</button>
         <div style="margin-top:16px">
           <div class="pts-chips">
-            <div class="pc">Group W <b>+3</b></div>
-            <div class="pc">Group D <b>+1</b></div>
-            <div class="pc">R32 <b>+5</b></div>
-            <div class="pc">R16 <b>+8</b></div>
-            <div class="pc">QF <b>+13</b></div>
-            <div class="pc">SF <b>+21</b></div>
-            <div class="pc">🏆 <b>+34</b></div>
+            <div class="pc">Win <b>+3</b></div>
+            <div class="pc">Draw <b>+1</b></div>
+            <div class="pc">Loss <b>+0</b></div>
           </div>
         </div>
         <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
@@ -538,6 +545,7 @@ const PTS = {groupW:3,groupD:1,r32:5,r16:8,qf:13,sf:21,champion:34};
 let app = {
   myManagerId: null,   // which manager am I (db id)
   mySlug: null,
+  isCommish: false,
   managers: [],        // [{id, name, slug, draft_position}]
   picks: [],           // [{id, manager_id, team_id, pick_number}]
   scores: {},          // teamId -> {wins,draws,losses,stage,points}
@@ -545,7 +553,7 @@ let app = {
   apiKey: localStorage.getItem('wc_apikey') || '',
   pendingTeamId: null,
   activeGroup: 'ALL',
-  localMgrs: ['Kyle','','','','','',''],
+  localMgrs: [...DEFAULT_MGRS],
 };
 
 // Detect ?m=slug in URL
@@ -563,6 +571,10 @@ async function init() {
     await loadAll();
     renderAll();
   }, 4000);
+
+  // Keep live scores fresh: sync now and every 2 minutes (needs API key set)
+  syncScores();
+  setInterval(syncScores, 120000);
 
   // If URL has ?m=slug, auto-enter as that manager
   if (urlSlug) {
@@ -625,9 +637,14 @@ function renderManagerPicker() {
 
 function enterAs(mgrId) {
   if (mgrId === 'commissioner') {
+    const pw = prompt('Commissioner password:');
+    if (pw === null) return;
+    if (pw !== COMMISH_PW) { alert('Wrong password.'); return; }
+    app.isCommish = true;
     app.myManagerId = null;
     app.mySlug = null;
   } else {
+    app.isCommish = false;
     const mgr = app.managers.find(m => m.id === mgrId);
     app.myManagerId = mgrId;
     app.mySlug = mgr?.slug;
@@ -637,7 +654,8 @@ function enterAs(mgrId) {
   }
   document.getElementById('screen-pick').classList.remove('active');
   document.getElementById('screen-app').classList.add('active');
-  document.getElementById('shareLink').textContent = window.location.href;
+  document.getElementById('tabSetupBtn').style.display = app.isCommish ? '' : 'none';
+  document.getElementById('shareLink').textContent = window.location.origin + window.location.pathname;
   renderAll();
 }
 
@@ -677,7 +695,7 @@ function renderClock() {
     const name = onClockMgr?.name || '—';
 
     document.getElementById('clockName').textContent = isMe ? `🟡 Your Pick, ${name}!` : `${name} is picking...`;
-    document.getElementById('clockSub').textContent = `Pick #${pickIdx+1} of 48 · Round ${Math.floor(pickIdx/7)+1}`;
+    document.getElementById('clockSub').textContent = `Pick #${pickIdx+1} of 48 · Round ${Math.floor(pickIdx/MGR_COUNT)+1}`;
 
     const banner = document.getElementById('clockBanner');
     const tag = document.getElementById('clockTag');
@@ -719,11 +737,16 @@ function renderTeams() {
     (!q || t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q))
   );
 
-  el.innerHTML = list.map(t => `
-    <div class="tcard ${taken.has(t.id)?'taken':''}" onclick="${taken.has(t.id)?'':''}" onpointerup="${taken.has(t.id)?'':'openModal(\''+t.id+'\')'}">
+  // Group sections, teams sorted by FIFA ranking within each group
+  const groups = [...new Set(list.map(t => t.group))].sort();
+  el.innerHTML = groups.map(g => {
+    const gTeams = list.filter(t => t.group===g).sort((a,b) => a.rank-b.rank);
+    return `<div class="grp-head">Group ${g}</div>` + gTeams.map(t => `
+    <div class="tcard ${taken.has(t.id)?'taken':''}" onpointerup="${taken.has(t.id)?'':'openModal(\''+t.id+'\')'}">
       <span class="tflag">${t.flag}</span>
-      <div><div class="tname">${t.name}</div><div class="tgrp">Grp ${t.group}</div></div>
+      <div><div class="tname">${t.name}</div><div class="tgrp">FIFA #${t.rank}</div></div>
     </div>`).join('');
+  }).join('');
 }
 
 // ── PICK MODAL ─────────────────────────────────────────────────────────────
@@ -828,19 +851,26 @@ function renderTeamsTable() {
   const body = document.getElementById('teamsBody');
   if (!body) return;
   const pickMap = new Map(app.picks.map(p => [p.team_id, p.manager_id]));
-  body.innerHTML = TEAMS.map(t => {
-    const mid = pickMap.get(t.id);
-    const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'?') : '—';
-    const s = app.scores[t.id] || {wins:0,draws:0,losses:0,stage:'GROUP',points:0};
-    const stg = s.stage||'GROUP';
-    const cls = stg==='ELIMINATED'?'sbadge s-out':stg==='GROUP'?'sbadge s-group':'sbadge s-alive';
-    return `<tr>
-      <td>${t.flag} ${t.name}</td>
-      <td>${owner}</td>
-      <td><span class="${cls}">${stg}</span></td>
-      <td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td>
-      <td style="color:var(--gold);font-weight:700">${s.points}</td>
-    </tr>`;
+  const groups = [...new Set(TEAMS.map(t => t.group))].sort();
+
+  body.innerHTML = groups.map(g => {
+    // Live group standings: sort by points, then wins, then FIFA ranking
+    const rows = TEAMS.filter(t => t.group===g)
+      .map(t => ({t, s: app.scores[t.id] || {wins:0,draws:0,losses:0,points:0}}))
+      .sort((a,b) => (b.s.points-a.s.points) || (b.s.wins-a.s.wins) || (a.t.rank-b.t.rank));
+
+    const header = `<tr><td colspan="7" style="padding:14px 10px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold)">GROUP ${g}</td></tr>`;
+    return header + rows.map(({t,s},i) => {
+      const mid = pickMap.get(t.id);
+      const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'?') : '—';
+      return `<tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td>${t.flag} ${t.name} <span style="color:var(--muted);font-size:10px;font-family:'JetBrains Mono',monospace">#${t.rank}</span></td>
+        <td>${owner}</td>
+        <td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td>
+        <td style="color:var(--gold);font-weight:700">${s.points}</td>
+      </tr>`;
+    }).join('');
   }).join('');
 }
 
@@ -851,11 +881,11 @@ function renderSetupManagers() {
   // Sync localMgrs from DB if managers exist and localMgrs looks empty
   if (app.managers.length > 0 && app.localMgrs.filter(n=>n.trim()).length === 0) {
     app.localMgrs = app.managers.map(m => m.name);
-    while (app.localMgrs.length < 7) app.localMgrs.push('');
+    while (app.localMgrs.length < MGR_COUNT) app.localMgrs.push('');
   }
   const names = app.localMgrs;
 
-  el.innerHTML = Array.from({length:7},(_,i) => `
+  el.innerHTML = Array.from({length:MGR_COUNT},(_,i) => `
     <div class="mgr-row">
       <span class="pos-badge">${i+1}</span>
       <input type="text" value="${names[i]||''}" placeholder="Manager ${i+1}" oninput="app.localMgrs[${i}]=this.value"/>
@@ -875,6 +905,7 @@ function shuffleManagers() {
 }
 
 async function saveManagers() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
   const names = app.localMgrs.filter(n=>n.trim());
   if (names.length < 2) { alert('Add at least 2 names.'); return; }
   if (!confirm(`Save ${names.length} managers and start the draft?\n\n${names.join(', ')}\n\nThis will clear any existing managers.`)) return;
@@ -910,9 +941,16 @@ function saveApiKey() {
 async function syncScores() {
   if (!app.apiKey) return;
   try {
-    const res = await fetch('https://api.football-data.org/v4/competitions/2000/standings', {
-      headers: { 'X-Auth-Token': app.apiKey }
-    });
+    const apiUrl = 'https://api.football-data.org/v4/competitions/2000/standings';
+    let res;
+    try {
+      res = await fetch(apiUrl, { headers: { 'X-Auth-Token': app.apiKey } });
+    } catch(_) {
+      // football-data.org blocks browser CORS; retry through a proxy
+      res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(apiUrl), {
+        headers: { 'X-Auth-Token': app.apiKey }
+      });
+    }
     if (!res.ok) return;
     const data = await res.json();
     if (!data.standings) return;
@@ -940,6 +978,7 @@ async function syncScores() {
 }
 
 async function resetAll() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
   if (!confirm('⚠️ Reset ALL draft data?\n\nThis deletes all picks and managers. This CANNOT be undone.')) return;
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/picks?pick_number=gte.1`, { method:'DELETE', headers: sb.headers() });
@@ -948,7 +987,7 @@ async function resetAll() {
     const qd = new SupabaseQuery(sb, 'draft_state');
     qd._filters = ['id=eq.1'];
     await qd.update({ draft_started: false, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
-    app.localMgrs = ['','','','','','',''];
+    app.localMgrs = [...DEFAULT_MGRS];
     await loadAll();
     document.getElementById('screen-app').classList.remove('active');
     document.getElementById('screen-pick').classList.add('active');
