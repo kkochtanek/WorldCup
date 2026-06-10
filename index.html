@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>World Cup Pride · Diadora</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<title>World Cup Pride</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
-/* Diadora-inspired palette: white field, near-black ink, tricolore green/red */
+/* Palette: white field, near-black ink, tricolore green/red accents */
 :root {
   --black:    #ffffff;
   --navy:     #ffffff;
@@ -32,16 +31,11 @@ html,body{height:100%;background:var(--black);color:var(--text);font-family:'Int
 header{
   background:var(--navy);
   border-bottom:1px solid var(--border);
-  padding:14px 20px;
+  padding:12px 20px;
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:200;
 }
-.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--text);display:flex;align-items:baseline;gap:10px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--text)}
 .logo em{color:var(--gold);font-style:normal}
-.diadora-mark{
-  font-family:'Inter',sans-serif;font-weight:700;font-style:italic;
-  text-transform:lowercase;letter-spacing:-0.5px;font-size:17px;color:var(--text);
-}
 .hright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
 .sync-dot.live{background:var(--green);animation:pulse 1.8s infinite}
@@ -78,6 +72,7 @@ header{
   background:var(--navy);
   border-bottom:1px solid var(--border);
   display:flex;gap:0;overflow-x:auto;
+  position:sticky;top:0;z-index:200;
 }
 .tab{
   padding:12px 20px;cursor:pointer;
@@ -92,7 +87,7 @@ header{
 .main{padding:20px;max-width:1000px;margin:0 auto}
 
 /* ── CARDS ── */
-.card{background:var(--navy);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.card{background:var(--navy);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(20,30,20,.05)}
 .card-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--gold);margin-bottom:14px}
 
 /* ── ON CLOCK BANNER ── */
@@ -189,18 +184,18 @@ input:focus{outline:none;border-color:var(--gold)}
 }
 
 /* ── LEADERBOARD ── */
-.lb-list{display:flex;flex-direction:column;gap:8px}
+.lb-list{display:flex;flex-direction:column;gap:6px}
 .lb-row{
   background:var(--navy2);border:1px solid var(--border);border-radius:8px;
-  padding:13px 16px;display:flex;align-items:center;gap:14px;
+  padding:9px 13px;display:flex;align-items:center;gap:12px;
 }
-.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:26px;min-width:34px;text-align:center;color:var(--muted)}
-.lb-rank.r1{color:#ffd700}.lb-rank.r2{color:#c0c0c0}.lb-rank.r3{color:#cd7f32}
-.lb-info{flex:1}
-.lb-name{font-weight:700;font-size:15px}
-.lb-teams{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5}
-.lb-pts{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--gold);letter-spacing:1px;text-align:right}
-.lb-ptsl{font-size:10px;color:var(--muted);text-align:right;font-family:'JetBrains Mono',monospace}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:21px;min-width:30px;text-align:center;color:var(--muted)}
+.lb-rank.r1{color:#d4a017}.lb-rank.r2{color:#9a9a9a}.lb-rank.r3{color:#cd7f32}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-weight:700;font-size:14px}
+.lb-teams{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.45}
+.lb-pts{font-family:'Bebas Neue',sans-serif;font-size:27px;color:var(--gold);letter-spacing:1px;text-align:right}
+.lb-ptsl{font-size:9px;color:var(--muted);text-align:right;font-family:'JetBrains Mono',monospace}
 
 /* ── SETUP ── */
 .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -220,15 +215,25 @@ input:focus{outline:none;border-color:var(--gold)}
 .alert-warn{background:rgba(0,140,69,.1);border:1px solid var(--gold);color:var(--gold-l)}
 .alert-ok{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);color:#7dcfa0}
 
-/* ── TEAMS TABLE ── */
-.ttable{width:100%;border-collapse:collapse;font-size:12px}
-.ttable th{text-align:left;padding:8px 10px;color:var(--muted);font-size:10px;letter-spacing:1px;border-bottom:1px solid var(--border)}
-.ttable td{padding:8px 10px;border-bottom:1px solid rgba(28,45,78,.4)}
-.ttable tr:last-child td{border-bottom:none}
-.sbadge{font-size:10px;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:600}
-.s-group{background:rgba(0,140,69,.1);color:var(--gold);border:1px solid rgba(0,140,69,.25)}
-.s-alive{background:rgba(39,174,96,.1);color:var(--green);border:1px solid rgba(39,174,96,.25)}
-.s-out{background:rgba(231,76,60,.1);color:var(--red);border:1px solid rgba(231,76,60,.2)}
+/* ── GROUP CARDS (Teams tab) ── */
+.groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.gcard{
+  background:var(--navy);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 12px;box-shadow:0 1px 3px rgba(20,30,20,.05);
+}
+.gcard-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--gold);
+  border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:5px;
+}
+.gcard-cols{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted)}
+.gcard-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.gpos{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;width:12px}
+.gflag{font-size:17px;line-height:1}
+.gteam{flex:1;font-weight:600;min-width:0;line-height:1.25;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.gteam .gowner{display:block;font-size:10px;color:var(--gold);font-weight:500}
+.gwdl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.gpts{font-weight:700;color:var(--text);min-width:20px;text-align:right;font-size:14px}
 
 /* ── CONFIRM MODAL ── */
 .modal-bg{
@@ -269,10 +274,26 @@ footer{text-align:center;padding:22px;font-size:11px;color:var(--muted);border-t
 
 /* ── MOBILE ── */
 @media(max-width:600px){
-  .main{padding:14px}
-  .clock-name{font-size:22px}
-  header{padding:12px 14px}
-  .logo{font-size:19px}
+  .main{padding:10px}
+  .card{padding:12px;margin-bottom:10px}
+  .clock-banner{padding:12px 14px;margin-bottom:10px}
+  .clock-name{font-size:19px}
+  .clock-sub{font-size:11px}
+  header{padding:9px 14px}
+  .logo{font-size:18px;letter-spacing:2px}
+  .tab{padding:10px 13px;font-size:12px}
+  .team-grid{grid-template-columns:repeat(2,1fr);max-height:55vh}
+  .tcard{padding:8px 9px;gap:7px}
+  .lb-pts{font-size:23px}
+  .lb-teams{font-size:9px}
+  .groups-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .gcard{padding:8px 9px}
+  .gcard-row{font-size:11px;gap:5px;padding:3px 0}
+  .gflag{font-size:14px}
+  .gwdl{font-size:9px}
+  .mgr-btn{padding:13px 18px;font-size:14px}
+  .manager-btns{gap:9px}
+  footer{padding:16px;font-size:10px}
 }
 </style>
 </head>
@@ -284,7 +305,6 @@ const SUPABASE_URL = 'https://kqwitbmocklwsmjcuxoy.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtxd2l0Ym1vY2tsd3NtamN1eG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjIxNzUsImV4cCI6MjA5NjUzODE3NX0.0CSZvNAy_Av4D4Kl0apgHCiEj2ecW-K1AXtYQUFSJRI';
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
 // ─── SUPABASE CLIENT (lightweight, no npm needed) ───────────────────────────
 class SupabaseClient {
@@ -356,31 +376,32 @@ const sb = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON);
 
 <!-- ─── TEAMS DATA ─────────────────────────────────────────────────────────── -->
 <script>
+// Official 2026 World Cup groups (December 2025 draw + March 2026 playoff winners)
 const TEAMS = [
-  {id:'USA',name:'United States',flag:'🇺🇸',group:'A',rank:14},{id:'MEX',name:'Mexico',flag:'🇲🇽',group:'A',rank:15},
-  {id:'CAN',name:'Canada',flag:'🇨🇦',group:'A',rank:27},{id:'PAN',name:'Panama',flag:'🇵🇦',group:'A',rank:33},
-  {id:'ARG',name:'Argentina',flag:'🇦🇷',group:'B',rank:2},{id:'CHI',name:'Chile',flag:'🇨🇱',group:'B',rank:56},
-  {id:'PER',name:'Peru',flag:'🇵🇪',group:'B',rank:42},{id:'BOL',name:'Bolivia',flag:'🇧🇴',group:'B',rank:76},
-  {id:'BRA',name:'Brazil',flag:'🇧🇷',group:'C',rank:5},{id:'URU',name:'Uruguay',flag:'🇺🇾',group:'C',rank:16},
-  {id:'PAR',name:'Paraguay',flag:'🇵🇾',group:'C',rank:39},{id:'VEN',name:'Venezuela',flag:'🇻🇪',group:'C',rank:50},
-  {id:'FRA',name:'France',flag:'🇫🇷',group:'D',rank:3},{id:'BEL',name:'Belgium',flag:'🇧🇪',group:'D',rank:8},
-  {id:'WAL',name:'Wales',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',group:'D',rank:30},{id:'MAR',name:'Morocco',flag:'🇲🇦',group:'D',rank:11},
-  {id:'ESP',name:'Spain',flag:'🇪🇸',group:'E',rank:1},{id:'POR',name:'Portugal',flag:'🇵🇹',group:'E',rank:6},
-  {id:'SCO',name:'Scotland',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',group:'E',rank:38},{id:'SEN',name:'Senegal',flag:'🇸🇳',group:'E',rank:19},
-  {id:'GER',name:'Germany',flag:'🇩🇪',group:'F',rank:9},{id:'NED',name:'Netherlands',flag:'🇳🇱',group:'F',rank:7},
-  {id:'AUT',name:'Austria',flag:'🇦🇹',group:'F',rank:24},{id:'COD',name:'DR Congo',flag:'🇨🇩',group:'F',rank:60},
-  {id:'ENG',name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',group:'G',rank:4},{id:'SUI',name:'Switzerland',flag:'🇨🇭',group:'G',rank:17},
-  {id:'DEN',name:'Denmark',flag:'🇩🇰',group:'G',rank:20},{id:'EGY',name:'Egypt',flag:'🇪🇬',group:'G',rank:34},
-  {id:'COL',name:'Colombia',flag:'🇨🇴',group:'H',rank:13},{id:'ECU',name:'Ecuador',flag:'🇪🇨',group:'H',rank:23},
-  {id:'CRC',name:'Costa Rica',flag:'🇨🇷',group:'H',rank:54},{id:'CMR',name:'Cameroon',flag:'🇨🇲',group:'H',rank:49},
-  {id:'JPN',name:'Japan',flag:'🇯🇵',group:'I',rank:18},{id:'KOR',name:'South Korea',flag:'🇰🇷',group:'I',rank:22},
-  {id:'AUS',name:'Australia',flag:'🇦🇺',group:'I',rank:25},{id:'IRI',name:'Iran',flag:'🇮🇷',group:'I',rank:21},
-  {id:'ITA',name:'Italy',flag:'🇮🇹',group:'J',rank:12},{id:'CRO',name:'Croatia',flag:'🇭🇷',group:'J',rank:10},
-  {id:'SVK',name:'Slovakia',flag:'🇸🇰',group:'J',rank:46},{id:'NGA',name:'Nigeria',flag:'🇳🇬',group:'J',rank:41},
-  {id:'POL',name:'Poland',flag:'🇵🇱',group:'K',rank:31},{id:'UKR',name:'Ukraine',flag:'🇺🇦',group:'K',rank:28},
-  {id:'TUR',name:'Turkey',flag:'🇹🇷',group:'K',rank:26},{id:'NZL',name:'New Zealand',flag:'🇳🇿',group:'K',rank:86},
-  {id:'SAU',name:'Saudi Arabia',flag:'🇸🇦',group:'L',rank:59},{id:'QAT',name:'Qatar',flag:'🇶🇦',group:'L',rank:51},
-  {id:'GHA',name:'Ghana',flag:'🇬🇭',group:'L',rank:73},{id:'HON',name:'Honduras',flag:'🇭🇳',group:'L',rank:75},
+  {id:'MEX',name:'Mexico',flag:'🇲🇽',group:'A',rank:14},{id:'KOR',name:'South Korea',flag:'🇰🇷',group:'A',rank:22},
+  {id:'RSA',name:'South Africa',flag:'🇿🇦',group:'A',rank:61},{id:'CZE',name:'Czechia',flag:'🇨🇿',group:'A',rank:44},
+  {id:'CAN',name:'Canada',flag:'🇨🇦',group:'B',rank:27},{id:'SUI',name:'Switzerland',flag:'🇨🇭',group:'B',rank:17},
+  {id:'QAT',name:'Qatar',flag:'🇶🇦',group:'B',rank:51},{id:'BIH',name:'Bosnia-Herzegovina',flag:'🇧🇦',group:'B',rank:70},
+  {id:'BRA',name:'Brazil',flag:'🇧🇷',group:'C',rank:5},{id:'MAR',name:'Morocco',flag:'🇲🇦',group:'C',rank:11},
+  {id:'SCO',name:'Scotland',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',group:'C',rank:38},{id:'HAI',name:'Haiti',flag:'🇭🇹',group:'C',rank:84},
+  {id:'USA',name:'United States',flag:'🇺🇸',group:'D',rank:15},{id:'TUR',name:'Türkiye',flag:'🇹🇷',group:'D',rank:26},
+  {id:'PAR',name:'Paraguay',flag:'🇵🇾',group:'D',rank:39},{id:'AUS',name:'Australia',flag:'🇦🇺',group:'D',rank:25},
+  {id:'GER',name:'Germany',flag:'🇩🇪',group:'E',rank:9},{id:'ECU',name:'Ecuador',flag:'🇪🇨',group:'E',rank:23},
+  {id:'CIV',name:'Ivory Coast',flag:'🇨🇮',group:'E',rank:42},{id:'CUW',name:'Curaçao',flag:'🇨🇼',group:'E',rank:82},
+  {id:'NED',name:'Netherlands',flag:'🇳🇱',group:'F',rank:7},{id:'JPN',name:'Japan',flag:'🇯🇵',group:'F',rank:19},
+  {id:'SWE',name:'Sweden',flag:'🇸🇪',group:'F',rank:41},{id:'TUN',name:'Tunisia',flag:'🇹🇳',group:'F',rank:43},
+  {id:'BEL',name:'Belgium',flag:'🇧🇪',group:'G',rank:8},{id:'IRN',name:'Iran',flag:'🇮🇷',group:'G',rank:21},
+  {id:'EGY',name:'Egypt',flag:'🇪🇬',group:'G',rank:34},{id:'NZL',name:'New Zealand',flag:'🇳🇿',group:'G',rank:86},
+  {id:'ESP',name:'Spain',flag:'🇪🇸',group:'H',rank:1},{id:'URU',name:'Uruguay',flag:'🇺🇾',group:'H',rank:16},
+  {id:'KSA',name:'Saudi Arabia',flag:'🇸🇦',group:'H',rank:59},{id:'CPV',name:'Cape Verde',flag:'🇨🇻',group:'H',rank:68},
+  {id:'FRA',name:'France',flag:'🇫🇷',group:'I',rank:3},{id:'SEN',name:'Senegal',flag:'🇸🇳',group:'I',rank:18},
+  {id:'NOR',name:'Norway',flag:'🇳🇴',group:'I',rank:29},{id:'IRQ',name:'Iraq',flag:'🇮🇶',group:'I',rank:58},
+  {id:'ARG',name:'Argentina',flag:'🇦🇷',group:'J',rank:2},{id:'ALG',name:'Algeria',flag:'🇩🇿',group:'J',rank:35},
+  {id:'AUT',name:'Austria',flag:'🇦🇹',group:'J',rank:24},{id:'JOR',name:'Jordan',flag:'🇯🇴',group:'J',rank:64},
+  {id:'POR',name:'Portugal',flag:'🇵🇹',group:'K',rank:6},{id:'COL',name:'Colombia',flag:'🇨🇴',group:'K',rank:13},
+  {id:'UZB',name:'Uzbekistan',flag:'🇺🇿',group:'K',rank:55},{id:'COD',name:'DR Congo',flag:'🇨🇩',group:'K',rank:60},
+  {id:'ENG',name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',group:'L',rank:4},{id:'CRO',name:'Croatia',flag:'🇭🇷',group:'L',rank:10},
+  {id:'GHA',name:'Ghana',flag:'🇬🇭',group:'L',rank:73},{id:'PAN',name:'Panama',flag:'🇵🇦',group:'L',rank:33},
 ];
 const TEAM_MAP = Object.fromEntries(TEAMS.map(t => [t.id, t]));
 
@@ -408,7 +429,7 @@ const PTS = {groupW:3,groupD:1};
 
 <div class="tricolore"></div>
 <header>
-  <div class="logo"><span class="diadora-mark">diadora</span> World Cup <em>Pride</em></div>
+  <div class="logo">World Cup <em>Pride</em></div>
   <div class="hright">
     <span class="sync-dot" id="syncDot"></span>
     <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="syncLabel">Connecting...</span>
@@ -419,9 +440,8 @@ const PTS = {groupW:3,groupD:1};
 <!-- MANAGER PICKER SCREEN (shown before choosing who you are) -->
 <div id="screen-pick" class="view active">
   <div class="wc-trophy">🏆</div>
-  <div style="font-family:'Inter',sans-serif;font-weight:700;font-style:italic;text-transform:lowercase;letter-spacing:-0.5px;font-size:20px;margin-bottom:4px">diadora</div>
   <div class="pick-title">World Cup Pride</div>
-  <div class="pick-sub">Tap your name to enter the draft</div>
+  <div class="pick-sub">Tap your name to enter</div>
   <div class="manager-btns" id="mgrBtns"></div>
   <div style="margin-top:32px">
     <button class="btn btn-out btn-sm" onclick="enterAs('commissioner')">⚙ Commissioner View</button>
@@ -484,13 +504,7 @@ const PTS = {groupW:3,groupD:1};
 
   <!-- TEAMS TAB -->
   <div id="tab-teams" class="view main">
-    <div class="card">
-      <div class="card-title">All 48 Teams · By Group</div>
-      <table class="ttable">
-        <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr></thead>
-        <tbody id="teamsBody"></tbody>
-      </table>
-    </div>
+    <div class="groups-grid" id="groupsGrid"></div>
   </div>
 
   <!-- SETUP TAB -->
@@ -499,11 +513,11 @@ const PTS = {groupW:3,groupD:1};
       <div class="card">
         <div class="card-title">👥 Managers</div>
         <div class="alert alert-info" style="font-size:12px">
-          <b>Commissioner only.</b> All 6 managers are pre-filled. Randomize the order if you want, then hit Save & Start Draft and share the link with the group.
+          <b>Commissioner only.</b> The six managers are fixed — randomize the draft order if you want, then hit Save & Restart Draft. Saving wipes existing picks.
         </div>
         <div class="mgr-inputs" id="mgrInputs"></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-gold btn-sm" onclick="saveManagers()">💾 Save & Start Draft</button>
+          <button class="btn btn-gold btn-sm" onclick="saveManagers()">💾 Save & Restart Draft</button>
           <button class="btn btn-out btn-sm" onclick="shuffleManagers()">🔀 Randomize Order</button>
         </div>
       </div>
@@ -630,7 +644,12 @@ function setSync(state) {
 function renderManagerPicker() {
   const el = document.getElementById('mgrBtns');
   if (app.managers.length === 0) {
-    el.innerHTML = `<div style="color:var(--muted);font-size:14px;text-align:center;padding:20px">No managers set up yet.<br><br><button class="btn btn-gold btn-sm" onclick="enterAs('commissioner')">⚙ Set Up Draft</button></div>`;
+    // Draft not bootstrapped yet — show the fixed roster; first tap sets everything up
+    el.innerHTML = DEFAULT_MGRS.map((n,i) => `
+      <button class="mgr-btn" onclick="bootstrapAndEnter(${i})">
+        <span style="font-size:20px">👤</span>
+        <span>${n}</span>
+      </button>`).join('');
     return;
   }
   el.innerHTML = app.managers.map(m => `
@@ -641,6 +660,28 @@ function renderManagerPicker() {
         <span class="draft-pos">Pick #${m.draft_position+1}</span>
       </span>
     </button>`).join('');
+}
+
+let bootstrapping = false;
+async function bootstrapAndEnter(idx) {
+  if (bootstrapping) return;
+  bootstrapping = true;
+  const name = DEFAULT_MGRS[idx];
+  await loadAll();
+  if (app.managers.length === 0) {
+    for (let i=0; i<DEFAULT_MGRS.length; i++) {
+      const slug = DEFAULT_MGRS[i].toLowerCase().replace(/[^a-z0-9-]/g,'') + '-' + i;
+      const q = new SupabaseQuery(sb, 'managers');
+      await q.insert({ name: DEFAULT_MGRS[i], slug, draft_position: i });
+    }
+    const qd = new SupabaseQuery(sb, 'draft_state');
+    qd._filters = ['id=eq.1'];
+    await qd.update({ draft_started: true, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
+    await loadAll();
+  }
+  bootstrapping = false;
+  const mgr = app.managers.find(m => m.name === name) || app.managers[idx];
+  if (mgr) enterAs(mgr.id);
 }
 
 function enterAs(mgrId) {
@@ -848,7 +889,7 @@ function renderLeaderboard() {
       <div class="lb-rank ${rc(i)}">${rn(i)}</div>
       <div class="lb-info">
         <div class="lb-name">${m.name}${m.id===app.myManagerId?' 👤':''}</div>
-        <div class="lb-teams">${m.teams.map(t=>t.flag+' '+t.name).join(' · ')||'No picks yet'}</div>
+        <div class="lb-teams">${m.teams.map(t=>t.flag+' '+t.id).join(' · ')||'No picks yet'}</div>
       </div>
       <div><div class="lb-pts">${m.pts}</div><div class="lb-ptsl">PTS</div></div>
     </div>`).join('');
@@ -856,29 +897,31 @@ function renderLeaderboard() {
 
 // ── TEAMS TABLE ────────────────────────────────────────────────────────────
 function renderTeamsTable() {
-  const body = document.getElementById('teamsBody');
-  if (!body) return;
+  const el = document.getElementById('groupsGrid');
+  if (!el) return;
   const pickMap = new Map(app.picks.map(p => [p.team_id, p.manager_id]));
   const groups = [...new Set(TEAMS.map(t => t.group))].sort();
 
-  body.innerHTML = groups.map(g => {
+  el.innerHTML = groups.map(g => {
     // Live group standings: sort by points, then wins, then FIFA ranking
     const rows = TEAMS.filter(t => t.group===g)
       .map(t => ({t, s: app.scores[t.id] || {wins:0,draws:0,losses:0,points:0}}))
       .sort((a,b) => (b.s.points-a.s.points) || (b.s.wins-a.s.wins) || (a.t.rank-b.t.rank));
 
-    const header = `<tr><td colspan="7" style="padding:14px 10px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold)">GROUP ${g}</td></tr>`;
-    return header + rows.map(({t,s},i) => {
-      const mid = pickMap.get(t.id);
-      const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'?') : '—';
-      return `<tr>
-        <td style="color:var(--muted)">${i+1}</td>
-        <td>${t.flag} ${t.name} <span style="color:var(--muted);font-size:10px;font-family:'JetBrains Mono',monospace">#${t.rank}</span></td>
-        <td>${owner}</td>
-        <td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td>
-        <td style="color:var(--gold);font-weight:700">${s.points}</td>
-      </tr>`;
-    }).join('');
+    return `<div class="gcard">
+      <div class="gcard-head"><span>Group ${g}</span><span class="gcard-cols">W-D-L · PTS</span></div>
+      ${rows.map(({t,s},i) => {
+        const mid = pickMap.get(t.id);
+        const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'') : '';
+        return `<div class="gcard-row">
+          <span class="gpos">${i+1}</span>
+          <span class="gflag">${t.flag}</span>
+          <span class="gteam">${t.name}${owner?`<span class="gowner">${owner}</span>`:''}</span>
+          <span class="gwdl">${s.wins}-${s.draws}-${s.losses}</span>
+          <span class="gpts">${s.points}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
   }).join('');
 }
 
@@ -886,29 +929,25 @@ function renderTeamsTable() {
 function renderSetupManagers() {
   const el = document.getElementById('mgrInputs');
   if (!el) return;
-  // Sync localMgrs from DB if managers exist and localMgrs looks empty
-  if (app.managers.length > 0 && app.localMgrs.filter(n=>n.trim()).length === 0) {
+  // Mirror the saved draft order unless the commissioner is mid-shuffle
+  if (app.managers.length > 0 && !app.mgrsDirty) {
     app.localMgrs = app.managers.map(m => m.name);
-    while (app.localMgrs.length < MGR_COUNT) app.localMgrs.push('');
   }
-  const names = app.localMgrs;
-
-  el.innerHTML = Array.from({length:MGR_COUNT},(_,i) => `
+  el.innerHTML = app.localMgrs.map((n,i) => `
     <div class="mgr-row">
       <span class="pos-badge">${i+1}</span>
-      <input type="text" value="${names[i]||''}" placeholder="Manager ${i+1}" oninput="app.localMgrs[${i}]=this.value"/>
+      <span style="font-weight:600;font-size:14px">${n}</span>
     </div>`).join('');
-  document.getElementById('apiKeyIn').value = app.apiKey;
+  const keyIn = document.getElementById('apiKeyIn');
+  if (keyIn && document.activeElement !== keyIn) keyIn.value = app.apiKey;
 }
 
 function shuffleManagers() {
-  const filled = app.localMgrs.filter(n=>n.trim());
-  for (let i=filled.length-1;i>0;i--) {
+  for (let i=app.localMgrs.length-1;i>0;i--) {
     const j=Math.floor(Math.random()*(i+1));
-    [filled[i],filled[j]]=[filled[j],filled[i]];
+    [app.localMgrs[i],app.localMgrs[j]]=[app.localMgrs[j],app.localMgrs[i]];
   }
-  let fi=0;
-  app.localMgrs = app.localMgrs.map(n => n.trim() ? filled[fi++] : n);
+  app.mgrsDirty = true;
   renderSetupManagers();
 }
 
@@ -934,6 +973,7 @@ async function saveManagers() {
   qd._filters = ['id=eq.1'];
   await qd.update({ draft_started: true, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
 
+  app.mgrsDirty = false;
   await loadAll();
   renderManagerPicker();
   renderAll();
@@ -1014,6 +1054,6 @@ function copyLink() {
 init();
 </script>
 
-<footer>World Cup Pride · In the likeness of <a href="https://www.diadora.com/en/us/" target="_blank" style="color:var(--gold);text-decoration:none">diadora.com</a> · Scores via football-data.org</footer>
+<footer>World Cup Pride · Scores via football-data.org</footer>
 </body>
 </html>
