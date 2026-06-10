@@ -575,7 +575,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v7';
+const APP_VERSION = 'v8';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -595,6 +595,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) chec
 let app = {
   myManagerId: null,   // which manager am I (db id)
   mySlug: null,
+  myName: null,
   isCommish: false,
   managers: [],        // [{id, name, slug, draft_position}]
   picks: [],           // [{id, manager_id, team_id, pick_number}]
@@ -636,15 +637,36 @@ async function init() {
   renderManagerPicker();
 }
 
+// Collapse accidental duplicate manager rows (a setup race can insert the
+// roster twice). Keep the earliest row per name and point picks at it, so
+// every device agrees on who is who.
+function normalizeManagers(mgrs, picks) {
+  const byName = new Map();
+  const alias = {};
+  [...mgrs].sort((a,b) => a.id - b.id).forEach(m => {
+    const key = m.name.toLowerCase();
+    if (byName.has(key)) alias[m.id] = byName.get(key).id;
+    else byName.set(key, m);
+  });
+  picks.forEach(p => { if (alias[p.manager_id]) p.manager_id = alias[p.manager_id]; });
+  return [...byName.values()].sort((a,b) => a.draft_position - b.draft_position);
+}
+
 async function loadAll() {
   try {
     const q1 = new SupabaseQuery(sb, 'managers');
     const {data: mgrs} = await q1.select().order('draft_position',{ascending:true}).execute();
-    if (mgrs) app.managers = mgrs;
 
     const q2 = new SupabaseQuery(sb, 'picks');
     const {data: picks} = await q2.select().order('pick_number',{ascending:true}).execute();
     if (picks) app.picks = picks;
+    if (mgrs) app.managers = normalizeManagers(mgrs, app.picks);
+
+    // If my manager row was a duplicate that got collapsed, re-find myself
+    if (app.myManagerId && !app.managers.some(m => m.id === app.myManagerId)) {
+      const me = app.managers.find(m => m.slug === app.mySlug || m.name === app.myName);
+      if (me) { app.myManagerId = me.id; app.mySlug = me.slug; }
+    }
 
     const q3 = new SupabaseQuery(sb, 'draft_state');
     const {data: ds} = await q3.select().execute();
@@ -697,14 +719,18 @@ async function bootstrapAndEnter(idx) {
   const name = DEFAULT_MGRS[idx];
   await loadAll();
   if (app.managers.length === 0) {
-    for (let i=0; i<DEFAULT_MGRS.length; i++) {
-      const slug = DEFAULT_MGRS[i].toLowerCase().replace(/[^a-z0-9-]/g,'') + '-' + i;
-      const q = new SupabaseQuery(sb, 'managers');
-      await q.insert({ name: DEFAULT_MGRS[i], slug, draft_position: i });
+    // Re-check right before inserting — another device may have just set up
+    const check = await new SupabaseQuery(sb, 'managers').select().execute();
+    if (!check.data || check.data.length === 0) {
+      for (let i=0; i<DEFAULT_MGRS.length; i++) {
+        const slug = DEFAULT_MGRS[i].toLowerCase().replace(/[^a-z0-9-]/g,'') + '-' + i;
+        const q = new SupabaseQuery(sb, 'managers');
+        await q.insert({ name: DEFAULT_MGRS[i], slug, draft_position: i });
+      }
+      const qd = new SupabaseQuery(sb, 'draft_state');
+      qd._filters = ['id=eq.1'];
+      await qd.update({ draft_started: true, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
     }
-    const qd = new SupabaseQuery(sb, 'draft_state');
-    qd._filters = ['id=eq.1'];
-    await qd.update({ draft_started: true, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
     await loadAll();
   }
   bootstrapping = false;
@@ -725,6 +751,7 @@ function enterAs(mgrId) {
     const mgr = app.managers.find(m => m.id === mgrId);
     app.myManagerId = mgrId;
     app.mySlug = mgr?.slug;
+    app.myName = mgr?.name;
     // Update URL without reload
     const newUrl = window.location.pathname + '?m=' + (mgr?.slug || mgrId);
     window.history.replaceState({}, '', newUrl);
