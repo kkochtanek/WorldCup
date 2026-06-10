@@ -3,30 +3,32 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>World Cup 2026 Draft</title>
+<title>World Cup Pride · Diadora</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
+/* Diadora-inspired palette: white field, near-black ink, tricolore green/red */
 :root {
-  --black:    #07090f;
-  --navy:     #0d1626;
-  --navy2:    #121f38;
-  --border:   #1c2d4e;
-  --gold:     #c8a84b;
-  --gold-l:   #e6c76a;
-  --gold-dim: rgba(200,168,75,0.12);
-  --green:    #27ae60;
-  --red:      #e74c3c;
+  --black:    #ffffff;
+  --navy:     #ffffff;
+  --navy2:    #f4f4f1;
+  --border:   #e3e3dd;
+  --gold:     #008c45;
+  --gold-l:   #00a857;
+  --gold-dim: rgba(0,140,69,0.08);
+  --green:    #008c45;
+  --red:      #cd212a;
   --blue:     #2980b9;
-  --text:     #dde2ef;
-  --muted:    #5a6a8a;
+  --text:     #15151a;
+  --muted:    #8a8a85;
   --r:        10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--black);color:var(--text);font-family:'Inter',sans-serif}
 
 /* ── HEADER ── */
+.tricolore{height:4px;background:linear-gradient(90deg,#008c45 0 33.4%,#f4f5f0 33.4% 66.7%,#cd212a 66.7% 100%)}
 header{
   background:var(--navy);
   border-bottom:1px solid var(--border);
@@ -34,8 +36,12 @@ header{
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:200;
 }
-.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold)}
-.logo em{color:var(--text);font-style:normal}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--text);display:flex;align-items:baseline;gap:10px}
+.logo em{color:var(--gold);font-style:normal}
+.diadora-mark{
+  font-family:'Inter',sans-serif;font-weight:700;font-style:italic;
+  text-transform:lowercase;letter-spacing:-0.5px;font-size:17px;color:var(--text);
+}
 .hright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
 .sync-dot.live{background:var(--green);animation:pulse 1.8s infinite}
@@ -50,7 +56,7 @@ header{
   min-height:100vh;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:32px 20px;
-  background:radial-gradient(ellipse at top,rgba(200,168,75,.07) 0%,transparent 60%),var(--black);
+  background:radial-gradient(ellipse at top,rgba(0,140,69,.07) 0%,transparent 60%),var(--black);
 }
 .wc-trophy{font-size:64px;margin-bottom:16px;animation:floatY 3s ease-in-out infinite}
 @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -95,7 +101,7 @@ header{
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
 }
 .clock-banner.yours{
-  background:linear-gradient(135deg,rgba(200,168,75,.2),rgba(200,168,75,.05));
+  background:linear-gradient(135deg,rgba(0,140,69,.2),rgba(0,140,69,.05));
   border:1px solid var(--gold);
 }
 .clock-banner.waiting{
@@ -172,7 +178,7 @@ input:focus{outline:none;border-color:var(--gold)}
   padding:10px 14px;transition:border .2s;
 }
 .brow.onclock{border-color:var(--gold);background:var(--gold-dim)}
-.brow.me{border-color:rgba(200,168,75,.4)}
+.brow.me{border-color:rgba(0,140,69,.4)}
 .brow-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .brow-name{font-weight:700;font-size:13px}
 .brow-count{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
@@ -211,7 +217,7 @@ input:focus{outline:none;border-color:var(--gold)}
 .pc b{color:var(--gold)}
 .alert{padding:11px 14px;border-radius:7px;font-size:13px;margin-bottom:12px;line-height:1.5}
 .alert-info{background:rgba(41,128,185,.1);border:1px solid rgba(41,128,185,.3);color:#7fb3d3}
-.alert-warn{background:rgba(200,168,75,.1);border:1px solid var(--gold);color:var(--gold-l)}
+.alert-warn{background:rgba(0,140,69,.1);border:1px solid var(--gold);color:var(--gold-l)}
 .alert-ok{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);color:#7dcfa0}
 
 /* ── TEAMS TABLE ── */
@@ -220,7 +226,7 @@ input:focus{outline:none;border-color:var(--gold)}
 .ttable td{padding:8px 10px;border-bottom:1px solid rgba(28,45,78,.4)}
 .ttable tr:last-child td{border-bottom:none}
 .sbadge{font-size:10px;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:600}
-.s-group{background:rgba(200,168,75,.1);color:var(--gold);border:1px solid rgba(200,168,75,.25)}
+.s-group{background:rgba(0,140,69,.1);color:var(--gold);border:1px solid rgba(0,140,69,.25)}
 .s-alive{background:rgba(39,174,96,.1);color:var(--green);border:1px solid rgba(39,174,96,.25)}
 .s-out{background:rgba(231,76,60,.1);color:var(--red);border:1px solid rgba(231,76,60,.2)}
 
@@ -253,7 +259,7 @@ input:focus{outline:none;border-color:var(--gold)}
 
 /* ── DRAFT COMPLETE ── */
 .complete-banner{
-  background:linear-gradient(135deg,rgba(200,168,75,.18),transparent);
+  background:linear-gradient(135deg,rgba(0,140,69,.18),transparent);
   border:1px solid var(--gold);border-radius:var(--r);
   padding:22px;text-align:center;margin-bottom:18px;
 }
@@ -400,8 +406,9 @@ const PTS = {groupW:3,groupD:1};
 
 <!-- ─── HTML STRUCTURE ─────────────────────────────────────────────────────── -->
 
+<div class="tricolore"></div>
 <header>
-  <div class="logo">World Cup <em>2026</em> Draft</div>
+  <div class="logo"><span class="diadora-mark">diadora</span> World Cup <em>Pride</em></div>
   <div class="hright">
     <span class="sync-dot" id="syncDot"></span>
     <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="syncLabel">Connecting...</span>
@@ -412,7 +419,8 @@ const PTS = {groupW:3,groupD:1};
 <!-- MANAGER PICKER SCREEN (shown before choosing who you are) -->
 <div id="screen-pick" class="view active">
   <div class="wc-trophy">🏆</div>
-  <div class="pick-title">Who are you?</div>
+  <div style="font-family:'Inter',sans-serif;font-weight:700;font-style:italic;text-transform:lowercase;letter-spacing:-0.5px;font-size:20px;margin-bottom:4px">diadora</div>
+  <div class="pick-title">World Cup Pride</div>
   <div class="pick-sub">Tap your name to enter the draft</div>
   <div class="manager-btns" id="mgrBtns"></div>
   <div style="margin-top:32px">
@@ -1006,6 +1014,6 @@ function copyLink() {
 init();
 </script>
 
-<footer>World Cup 2026 Draft · Powered by Supabase · Scores via football-data.org</footer>
+<footer>World Cup Pride · In the likeness of <a href="https://www.diadora.com/en/us/" target="_blank" style="color:var(--gold);text-decoration:none">diadora.com</a> · Scores via football-data.org</footer>
 </body>
 </html>
