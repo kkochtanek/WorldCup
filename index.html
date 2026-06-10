@@ -579,7 +579,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v9';
+const APP_VERSION = 'v10';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -1153,6 +1153,7 @@ function copyLink() {
 init();
 </script>
 
-<footer>World Cup Pride · Scores via football-data.org</footer>
+<footer>World Cup Pride · <span id="verTag"></span> · Scores via football-data.org</footer>
+<script>document.getElementById('verTag').textContent = APP_VERSION;</script>
 </body>
 </html>
