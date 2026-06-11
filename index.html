@@ -529,6 +529,12 @@ const PTS = {groupW:3,groupD:1};
           <button class="btn btn-gold btn-sm" onclick="saveManagers()">💾 Save & Restart Draft</button>
           <button class="btn btn-out btn-sm" onclick="shuffleManagers()">🔀 Randomize Order</button>
         </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <div class="alert alert-warn" style="font-size:12px">
+            Out of time? Auto-complete fills only the <b>remaining</b> picks — everything already drafted stays exactly as is. Teams are assigned by projected group-stage points, balanced so all six rosters come out as even as possible.
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="autoDraftRemaining()">⚡ Auto-Complete Draft</button>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">📡 Live Scores API</div>
@@ -579,7 +585,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v10';
+const APP_VERSION = 'v11';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -1116,6 +1122,74 @@ async function syncScores() {
     renderAll();
     document.getElementById('syncLabel').textContent = 'Synced ' + new Date().toLocaleTimeString();
   } catch(e) { console.error('Sync failed', e); }
+}
+
+// ── AUTO-DRAFT ─────────────────────────────────────────────────────────────
+// Projected group-stage points: win/draw probabilities from the FIFA-rank
+// gap against each of the team's three group opponents (3/W, 1/D scoring).
+function expPoints(team) {
+  return TEAMS.filter(t => t.group === team.group && t.id !== team.id).reduce((pts, opp) => {
+    const diff = opp.rank - team.rank;
+    const pWin = 1 / (1 + Math.pow(10, -diff / 40));
+    const pDraw = 0.25;
+    return pts + 3 * pWin * (1 - pDraw) + 1 * pDraw;
+  }, 0);
+}
+
+// Fill ONLY the remaining snake slots. Existing picks are never modified —
+// this function only inserts new pick rows. Each auto pick gives the
+// on-clock manager the available team whose projected points are closest
+// to what that roster still needs to reach the league average.
+async function autoDraftRemaining() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
+  await loadAll();
+  const done = app.picks.length;
+  if (done >= 48) { alert('Draft is already complete.'); return; }
+  if (app.managers.length !== MGR_COUNT) { alert('Roster looks incomplete — open the League health box below and send it to the commissioner chat.'); return; }
+  if (!confirm(`⚡ Auto-complete the draft?\n\nThe ${done} picks already made stay exactly as they are.\nThe remaining ${48-done} picks will be filled automatically,\nbalancing projected group-stage points across all six rosters.`)) return;
+
+  const exp = {};
+  TEAMS.forEach(t => exp[t.id] = expPoints(t));
+  const target = TEAMS.reduce((s,t) => s + exp[t.id], 0) / MGR_COUNT;
+  const taken = new Set(app.picks.map(p => p.team_id));
+  const totals = {}, slotsLeft = {};
+  app.managers.forEach(m => {
+    const mine = app.picks.filter(p => p.manager_id === m.id);
+    totals[m.id] = mine.reduce((s,p) => s + (exp[p.team_id]||0), 0);
+    slotsLeft[m.id] = Math.max(0, 8 - mine.length);
+  });
+
+  try {
+    for (let idx = done; idx < 48; idx++) {
+      const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[idx]);
+      if (!mgr) throw new Error('no manager for slot ' + (idx+1));
+      const avail = TEAMS.filter(t => !taken.has(t.id));
+      if (avail.length === 0) break;
+      const need = (target - totals[mgr.id]) / Math.max(1, slotsLeft[mgr.id]);
+      let best = avail[0], bestDist = Infinity;
+      avail.forEach(t => {
+        const dist = Math.abs(exp[t.id] - need);
+        if (dist < bestDist) { bestDist = dist; best = t; }
+      });
+      const res = await new SupabaseQuery(sb, 'picks').insert({ manager_id: mgr.id, team_id: best.id, pick_number: idx + 1 });
+      if (res.error) throw new Error('insert failed at pick ' + (idx+1) + ': ' + JSON.stringify(res.error).slice(0,150));
+      taken.add(best.id);
+      totals[mgr.id] += exp[best.id];
+      slotsLeft[mgr.id]--;
+      app.picks.push({ manager_id: mgr.id, team_id: best.id, pick_number: idx + 1 });
+    }
+    const qd = new SupabaseQuery(sb, 'draft_state');
+    qd._filters = ['id=eq.1'];
+    await qd.update({ current_pick: 49, draft_complete: true, updated_at: new Date().toISOString() });
+    await loadAll();
+    renderAll();
+    alert('✅ Auto-draft complete — all 48 teams assigned. Check the Board tab.');
+  } catch(e) {
+    app.lastError = 'auto-draft: ' + String(e && e.message || e).slice(0,200);
+    await loadAll();
+    renderAll();
+    alert('Auto-draft stopped: ' + (e.message || e) + '\n\nEverything filled so far is saved and nothing was lost — run it again to finish.');
+  }
 }
 
 async function resetAll() {
