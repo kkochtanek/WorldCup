@@ -593,7 +593,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v12';
+const APP_VERSION = 'v13';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -642,6 +642,7 @@ async function init() {
   setInterval(async () => {
     await loadAll();
     renderAll();
+    maybeAutoPick();
   }, 4000);
 
   // Keep live scores fresh: sync now and every 2 minutes (needs API key set)
@@ -707,7 +708,15 @@ async function loadAll() {
   try {
     const r1 = await new SupabaseQuery(sb, 'managers').select().order('draft_position',{ascending:true}).execute();
     const r2 = await new SupabaseQuery(sb, 'picks').select().order('pick_number',{ascending:true}).execute();
-    if (Array.isArray(r2.data)) app.picks = r2.data;
+    if (Array.isArray(r2.data)) {
+      // Tolerate racing clients: one pick per slot and per team (earliest row wins)
+      const seenNum = new Set(), seenTeam = new Set(), clean = [];
+      [...r2.data].sort((a,b) => (a.pick_number - b.pick_number) || (a.id - b.id)).forEach(p => {
+        if (seenNum.has(p.pick_number) || seenTeam.has(p.team_id)) return;
+        seenNum.add(p.pick_number); seenTeam.add(p.team_id); clean.push(p);
+      });
+      app.picks = clean;
+    }
     if (Array.isArray(r1.data)) {
       app.rawManagers = r1.data;
       app.managers = normalizeManagers(r1.data, app.picks);
@@ -840,7 +849,14 @@ function renderClock() {
     const name = onClockMgr?.name || '—';
 
     document.getElementById('clockName').textContent = isMe ? `🟡 Your Pick, ${name}!` : `${name} is picking...`;
-    document.getElementById('clockSub').textContent = `Pick #${pickIdx+1} of 48 · Round ${Math.floor(pickIdx/MGR_COUNT)+1}`;
+    const info = autoPickInfo();
+    let clockNote = '';
+    if (info && info.isAutoMgr) clockNote = ' · 🤖 auto-pick';
+    else if (info && info.deadline) {
+      const dl = new Date(info.deadline);
+      clockNote = ` · ⏱ auto at ${String(dl.getHours()).padStart(2,'0')}:${String(dl.getMinutes()).padStart(2,'0')}`;
+    }
+    document.getElementById('clockSub').textContent = `Pick #${pickIdx+1} of 48 · Round ${Math.floor(pickIdx/MGR_COUNT)+1}${clockNote}`;
 
     const banner = document.getElementById('clockBanner');
     const tag = document.getElementById('clockTag');
@@ -1161,6 +1177,74 @@ function expPoints(team) {
   }, 0);
 }
 
+// Pick the best team for a manager right now: the available team whose
+// projected points are closest to what that roster still needs to reach
+// the league average (recomputed from current picks every call).
+function chooseTeamFor(mgr) {
+  const exp = {};
+  TEAMS.forEach(t => exp[t.id] = expPoints(t));
+  const target = TEAMS.reduce((s,t) => s + exp[t.id], 0) / MGR_COUNT;
+  const taken = new Set(app.picks.map(p => p.team_id));
+  const avail = TEAMS.filter(t => !taken.has(t.id));
+  if (avail.length === 0) return null;
+  const mine = app.picks.filter(p => p.manager_id === mgr.id);
+  const total = mine.reduce((s,p) => s + (exp[p.team_id]||0), 0);
+  const need = (target - total) / Math.max(1, 8 - mine.length);
+  let best = avail[0], bestDist = Infinity;
+  avail.forEach(t => {
+    const dist = Math.abs(exp[t.id] - need);
+    if (dist < bestDist) { bestDist = dist; best = t; }
+  });
+  return best;
+}
+
+// ── LIVE AUTO-PICK ─────────────────────────────────────────────────────────
+// Geiger is always auto-picked; everyone else gets a 30-minute shot clock
+// measured from the previous pick (draft_state.updated_at). Runs from any
+// open page on the 4s poll; jitter + a pre-insert re-check keep multiple
+// open browsers from double-picking, and loadAll dedupes as a backstop.
+const AUTO_MANAGERS = ['geiger'];
+const PICK_TIMEOUT_MS = 30 * 60 * 1000;
+
+function autoPickInfo() {
+  const pickIdx = app.picks.length;
+  if (pickIdx >= 48 || app.draftState.draft_complete || app.managers.length !== MGR_COUNT) return null;
+  const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[pickIdx]);
+  if (!mgr) return null;
+  const isAutoMgr = AUTO_MANAGERS.includes(mgr.name.trim().toLowerCase());
+  const last = Date.parse(app.draftState.updated_at || '') || 0;
+  const deadline = last ? last + PICK_TIMEOUT_MS : 0;
+  return { pickIdx, mgr, isAutoMgr, deadline, expired: deadline > 0 && Date.now() > deadline };
+}
+
+let autoPicking = false;
+async function maybeAutoPick() {
+  if (autoPicking) return;
+  const info = autoPickInfo();
+  if (!info || (!info.isAutoMgr && !info.expired)) return;
+  autoPicking = true;
+  try {
+    // jitter so several open pages don't all fire at once
+    await new Promise(r => setTimeout(r, 1000 + Math.random()*4000));
+    await loadAll();
+    if (app.picks.length !== info.pickIdx) return;   // someone picked meanwhile
+    const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[info.pickIdx]);
+    if (!mgr || mgr.id !== info.mgr.id) return;
+    const team = chooseTeamFor(mgr);
+    if (!team) return;
+    const res = await new SupabaseQuery(sb, 'picks').insert({ manager_id: mgr.id, team_id: team.id, pick_number: info.pickIdx + 1 });
+    if (res.error) { app.lastError = 'auto-pick failed: ' + JSON.stringify(res.error).slice(0,150); return; }
+    const nextPick = info.pickIdx + 2;
+    const qd = new SupabaseQuery(sb, 'draft_state');
+    qd._filters = ['id=eq.1'];
+    await qd.update({ current_pick: nextPick, draft_complete: nextPick > 48, updated_at: new Date().toISOString() });
+    await loadAll();
+    renderAll();
+  } finally {
+    autoPicking = false;
+  }
+}
+
 // Fill ONLY the remaining snake slots. Existing picks are never modified —
 // this function only inserts new pick rows. Each auto pick gives the
 // on-clock manager the available team whose projected points are closest
@@ -1173,34 +1257,14 @@ async function autoDraftRemaining() {
   if (app.managers.length !== MGR_COUNT) { alert('Roster looks incomplete — open the League health box below and send it to the commissioner chat.'); return; }
   if (!confirm(`⚡ Auto-complete the draft?\n\nThe ${done} picks already made stay exactly as they are.\nThe remaining ${48-done} picks will be filled automatically,\nbalancing projected group-stage points across all six rosters.`)) return;
 
-  const exp = {};
-  TEAMS.forEach(t => exp[t.id] = expPoints(t));
-  const target = TEAMS.reduce((s,t) => s + exp[t.id], 0) / MGR_COUNT;
-  const taken = new Set(app.picks.map(p => p.team_id));
-  const totals = {}, slotsLeft = {};
-  app.managers.forEach(m => {
-    const mine = app.picks.filter(p => p.manager_id === m.id);
-    totals[m.id] = mine.reduce((s,p) => s + (exp[p.team_id]||0), 0);
-    slotsLeft[m.id] = Math.max(0, 8 - mine.length);
-  });
-
   try {
     for (let idx = done; idx < 48; idx++) {
       const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[idx]);
       if (!mgr) throw new Error('no manager for slot ' + (idx+1));
-      const avail = TEAMS.filter(t => !taken.has(t.id));
-      if (avail.length === 0) break;
-      const need = (target - totals[mgr.id]) / Math.max(1, slotsLeft[mgr.id]);
-      let best = avail[0], bestDist = Infinity;
-      avail.forEach(t => {
-        const dist = Math.abs(exp[t.id] - need);
-        if (dist < bestDist) { bestDist = dist; best = t; }
-      });
+      const best = chooseTeamFor(mgr);
+      if (!best) break;
       const res = await new SupabaseQuery(sb, 'picks').insert({ manager_id: mgr.id, team_id: best.id, pick_number: idx + 1 });
       if (res.error) throw new Error('insert failed at pick ' + (idx+1) + ': ' + JSON.stringify(res.error).slice(0,150));
-      taken.add(best.id);
-      totals[mgr.id] += exp[best.id];
-      slotsLeft[mgr.id]--;
       app.picks.push({ manager_id: mgr.id, team_id: best.id, pick_number: idx + 1 });
     }
     const qd = new SupabaseQuery(sb, 'draft_state');
