@@ -203,8 +203,11 @@ input:focus{outline:none;border-color:var(--gold)}
 .lb-info{flex:1;min-width:0}
 .lb-name{font-weight:700;font-size:14px}
 .lb-teams{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.45}
-.lb-pts{font-family:'Bebas Neue',sans-serif;font-size:27px;color:var(--gold);letter-spacing:1px;text-align:right}
-.lb-ptsl{font-size:9px;color:var(--muted);text-align:right;font-family:'JetBrains Mono',monospace}
+.lb-stats{display:flex;gap:13px;align-items:flex-end}
+.lb-num{font-family:'Bebas Neue',sans-serif;font-size:21px;color:var(--text);letter-spacing:1px;text-align:right;line-height:1}
+.lb-num.lb-proj{color:var(--muted)}
+.lb-num.lb-tot{color:var(--gold);font-size:26px}
+.lb-ptsl{font-size:9px;color:var(--muted);text-align:right;font-family:'JetBrains Mono',monospace;margin-top:2px}
 
 /* ── SETUP ── */
 .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -293,7 +296,9 @@ footer{text-align:center;padding:22px;font-size:11px;color:var(--muted);border-t
   .tab{padding:10px 13px;font-size:12px}
   .team-grid{grid-template-columns:repeat(2,1fr);max-height:55vh}
   .tcard{padding:8px 9px;gap:7px}
-  .lb-pts{font-size:23px}
+  .lb-stats{gap:9px}
+  .lb-num{font-size:17px}
+  .lb-num.lb-tot{font-size:21px}
   .lb-teams{font-size:9px}
   .groups-grid{grid-template-columns:1fr 1fr;gap:7px}
   .gcard{padding:8px 9px}
@@ -507,6 +512,9 @@ const PTS = {groupW:3,groupD:1};
         <div class="card-title" style="margin-bottom:0">🏆 Standings</div>
         <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Refresh</button>
       </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+        <b style="color:var(--text)">PTS</b> earned so far · <b style="color:var(--text)">PROJ</b> expected from games not yet played · <b style="color:var(--gold)">TOTAL</b> aggregate — standings ranked by total
+      </div>
       <div class="lb-list" id="lbList"></div>
     </div>
   </div>
@@ -585,7 +593,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v11';
+const APP_VERSION = 'v12';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -959,15 +967,28 @@ function renderBoard() {
 // ── LEADERBOARD ────────────────────────────────────────────────────────────
 function getTeamPts(teamId) { return app.scores[teamId]?.points || 0; }
 
+// Projected points from a team's REMAINING group games: the expPoints model
+// scaled by how many of its 3 matches are still unplayed, so projections
+// shrink to zero as results come in and TOTAL converges to actual.
+function getTeamProj(teamId) {
+  const t = TEAM_MAP[teamId];
+  if (!t) return 0;
+  const s = app.scores[teamId];
+  const played = s ? (s.wins||0) + (s.draws||0) + (s.losses||0) : 0;
+  const remaining = Math.max(0, 3 - played);
+  return expPoints(t) * remaining / 3;
+}
+
 function renderLeaderboard() {
   const el = document.getElementById('lbList');
   if (!el) return;
   const rows = app.managers.map(m => {
     const myPicks = app.picks.filter(p => p.manager_id === m.id);
     const pts = myPicks.reduce((s,p) => s + getTeamPts(p.team_id), 0);
+    const proj = myPicks.reduce((s,p) => s + getTeamProj(p.team_id), 0);
     const teams = myPicks.map(p => TEAM_MAP[p.team_id]).filter(Boolean);
-    return { ...m, pts, teams };
-  }).sort((a,b) => b.pts - a.pts);
+    return { ...m, pts, proj, total: pts + proj, teams };
+  }).sort((a,b) => b.total - a.total);
 
   const rc = (i) => i===0?'r1':i===1?'r2':i===2?'r3':'';
   const rn = (i) => ['1st','2nd','3rd'][i] || `${i+1}th`;
@@ -979,7 +1000,11 @@ function renderLeaderboard() {
         <div class="lb-name">${m.name}${m.id===app.myManagerId?' 👤':''}</div>
         <div class="lb-teams">${m.teams.map(t=>t.flag+' '+t.id).join(' · ')||'No picks yet'}</div>
       </div>
-      <div><div class="lb-pts">${m.pts}</div><div class="lb-ptsl">PTS</div></div>
+      <div class="lb-stats">
+        <div><div class="lb-num">${m.pts}</div><div class="lb-ptsl">PTS</div></div>
+        <div><div class="lb-num lb-proj">+${m.proj.toFixed(1)}</div><div class="lb-ptsl">PROJ</div></div>
+        <div><div class="lb-num lb-tot">${m.total.toFixed(1)}</div><div class="lb-ptsl">TOTAL</div></div>
+      </div>
     </div>`).join('');
 }
 
