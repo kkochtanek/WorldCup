@@ -55,11 +55,9 @@ async function fetchStandings() {
   if (process.env.FD_FIXTURE) {
     return JSON.parse(readFileSync(process.env.FD_FIXTURE, 'utf8'));
   }
-  const key = process.env.FOOTBALL_DATA_KEY;
-  if (!key) {
-    console.error('FOOTBALL_DATA_KEY secret is not set. Add it in repo Settings → Secrets and variables → Actions.');
-    process.exit(1);
-  }
+  // Repo secret takes precedence if one is ever configured; otherwise use
+  // the league's committed key (free tier, no payment attached).
+  const key = process.env.FOOTBALL_DATA_KEY || '2f27120af3bb4f278030fbed1ff6ac40';
   const res = await fetch('https://api.football-data.org/v4/competitions/2000/standings', {
     headers: { 'X-Auth-Token': key },
   });
