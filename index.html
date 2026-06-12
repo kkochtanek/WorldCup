@@ -620,7 +620,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v15';
+const APP_VERSION = 'v16';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -1081,7 +1081,9 @@ function renderSchedule() {
     return mid ? (app.managers.find(m => m.id === mid)?.name || '') : '';
   };
   const byDay = new Map();
-  [...app.matches].sort((a,b) => new Date(a.d) - new Date(b.d)).forEach(m => {
+  [...app.matches]
+    .filter(m => !(m.h === '?' && m.a === '?'))   // hide knockout slots until teams are decided
+    .sort((a,b) => new Date(a.d) - new Date(b.d)).forEach(m => {
     const day = new Date(m.d).toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
     if (!byDay.has(day)) byDay.set(day, []);
     byDay.get(day).push(m);
