@@ -545,9 +545,9 @@ const PTS = {groupW:3,groupD:1};
         </div>
       </div>
       <div class="card">
-        <div class="card-title">📡 Live Scores API</div>
+        <div class="card-title">📡 Live Scores</div>
         <div class="alert alert-info" style="font-size:12px">
-          Free key at <a href="https://www.football-data.org/client/register" target="_blank" style="color:var(--gold)">football-data.org</a> (30 seconds). Enables auto live score sync.
+          Scores sync automatically every ~10 minutes from football-data.org via GitHub Actions — standings update on every device on their own. The key below is only a manual backup: paste one and hit ⟳ Sync to force an update from this browser.
         </div>
         <input type="password" id="apiKeyIn" placeholder="Paste API key..." style="margin-bottom:8px"/>
         <button class="btn btn-gold btn-sm" onclick="saveApiKey()">Save Key</button>
@@ -593,7 +593,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v13';
+const APP_VERSION = 'v14';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
