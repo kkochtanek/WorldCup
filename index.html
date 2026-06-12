@@ -227,6 +227,21 @@ input:focus{outline:none;border-color:var(--gold)}
 .alert-warn{background:rgba(0,140,69,.1);border:1px solid var(--gold);color:var(--gold-l)}
 .alert-ok{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);color:#7dcfa0}
 
+/* ── SCHEDULE ── */
+.sch-day{
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;
+  color:var(--gold);padding:14px 0 4px;border-bottom:1px solid var(--border);
+  text-transform:uppercase;
+}
+.sch-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(20,30,20,.05);font-size:13px}
+.sch-when{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-width:58px}
+.sch-when.lv{color:var(--red);font-weight:700;animation:pulse 1.8s infinite}
+.sch-team{flex:1;font-weight:600;display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.sch-team.th{align-items:flex-end;text-align:right}
+.sch-team i{font-style:normal;font-size:9px;color:var(--gold);font-weight:500}
+.sch-score{font-family:'JetBrains Mono',monospace;font-weight:700;min-width:42px;text-align:center}
+.sch-row.live .sch-score{color:var(--red)}
+
 /* ── GROUP CARDS (Teams tab) ── */
 .groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
 .gcard{
@@ -468,6 +483,7 @@ const PTS = {groupW:3,groupD:1};
     <button class="tab active" onclick="showTab('draft',this)">⚡ Draft</button>
     <button class="tab" onclick="showTab('board',this)">📋 Board</button>
     <button class="tab" onclick="showTab('leaderboard',this)">🏆 Standings</button>
+    <button class="tab" onclick="showTab('schedule',this)">📅 Schedule</button>
     <button class="tab" onclick="showTab('teams',this)">📊 Teams</button>
     <button class="tab" id="tabSetupBtn" style="display:none" onclick="showTab('setup',this)">⚙ Setup</button>
   </div>
@@ -513,9 +529,20 @@ const PTS = {groupW:3,groupD:1};
         <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Refresh</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
-        <b style="color:var(--text)">PTS</b> earned so far · <b style="color:var(--text)">PROJ</b> expected from games not yet played · <b style="color:var(--gold)">TOTAL</b> aggregate — standings ranked by total
+        Ranked by <b style="color:var(--text)">PTS</b> earned (ties broken by total) · <b style="color:var(--text)">PROJ</b> expected from games not yet played · <b style="color:var(--gold)">TOTAL</b> aggregate outlook
       </div>
       <div class="lb-list" id="lbList"></div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE TAB -->
+  <div id="tab-schedule" class="view main">
+    <div class="card">
+      <div class="card-title">📅 Match Schedule</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+        All times local · 📺 US TV: <b style="color:var(--text)">FOX / FS1</b> (English) · <b style="color:var(--text)">Telemundo / Peacock</b> (Spanish) · Scores refresh every ~10 min
+      </div>
+      <div id="schList"></div>
     </div>
   </div>
 
@@ -593,7 +620,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v14';
+const APP_VERSION = 'v15';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -620,6 +647,7 @@ let app = {
   lastError: null,
   picks: [],           // [{id, manager_id, team_id, pick_number}]
   scores: {},          // teamId -> {wins,draws,losses,stage,points}
+  matches: [],         // [{d,s,h,a,hs,as}] from matches.json
   draftState: { current_pick:1, draft_started:false, draft_complete:false },
   apiKey: localStorage.getItem('wc_apikey') || '',
   pendingTeamId: null,
@@ -648,6 +676,10 @@ async function init() {
   // Keep live scores fresh: sync now and every 2 minutes (needs API key set)
   syncScores();
   setInterval(syncScores, 120000);
+
+  // Match schedule: load now and every 2 minutes
+  loadMatches().then(renderSchedule);
+  setInterval(async () => { await loadMatches(); renderSchedule(); }, 120000);
 
   // If URL has ?m=slug, auto-enter as that manager
   if (urlSlug) {
@@ -818,6 +850,7 @@ function renderAll() {
   renderTeams();
   renderBoard();
   renderLeaderboard();
+  renderSchedule();
   renderTeamsTable();
   renderSetupManagers();
 }
@@ -831,6 +864,7 @@ function showTab(name, btn) {
   if (name==='leaderboard') renderLeaderboard();
   if (name==='teams') renderTeamsTable();
   if (name==='board') renderBoard();
+  if (name==='schedule') renderSchedule();
 }
 
 // ── DRAFT CLOCK ────────────────────────────────────────────────────────────
@@ -1004,7 +1038,7 @@ function renderLeaderboard() {
     const proj = myPicks.reduce((s,p) => s + getTeamProj(p.team_id), 0);
     const teams = myPicks.map(p => TEAM_MAP[p.team_id]).filter(Boolean);
     return { ...m, pts, proj, total: pts + proj, teams };
-  }).sort((a,b) => b.total - a.total);
+  }).sort((a,b) => (b.pts - a.pts) || (b.total - a.total));
 
   const rc = (i) => i===0?'r1':i===1?'r2':i===2?'r3':'';
   const rn = (i) => ['1st','2nd','3rd'][i] || `${i+1}th`;
@@ -1022,6 +1056,53 @@ function renderLeaderboard() {
         <div><div class="lb-num lb-tot">${m.total.toFixed(1)}</div><div class="lb-ptsl">TOTAL</div></div>
       </div>
     </div>`).join('');
+}
+
+// ── SCHEDULE ───────────────────────────────────────────────────────────────
+async function loadMatches() {
+  try {
+    const res = await fetch('matches.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && Array.isArray(data.matches)) app.matches = data.matches;
+  } catch(_) {}
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schList');
+  if (!el) return;
+  if (!app.matches.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:14px 0">Schedule appears after the next data sync (within ~10 minutes).</div>';
+    return;
+  }
+  const pickMap = new Map(app.picks.map(p => [p.team_id, p.manager_id]));
+  const ownerOf = id => {
+    const mid = pickMap.get(id);
+    return mid ? (app.managers.find(m => m.id === mid)?.name || '') : '';
+  };
+  const byDay = new Map();
+  [...app.matches].sort((a,b) => new Date(a.d) - new Date(b.d)).forEach(m => {
+    const day = new Date(m.d).toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(m);
+  });
+  el.innerHTML = [...byDay.entries()].map(([day, ms]) => `
+    <div class="sch-day">${day}</div>
+    ${ms.map(m => {
+      const h = TEAM_MAP[m.h], a = TEAM_MAP[m.a];
+      const live = m.s === 'IN_PLAY' || m.s === 'PAUSED';
+      const done = m.s === 'FINISHED';
+      const score = (m.hs != null && m.as != null) ? `${m.hs}–${m.as}` : 'vs';
+      const when = live ? 'LIVE' : done ? 'FT' : new Date(m.d).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+      const side = (t, raw, id) => `<span>${t ? t.flag + ' ' + t.id : raw}</span>${ownerOf(id) ? `<i>${ownerOf(id)}</i>` : ''}`;
+      return `<div class="sch-row${live ? ' live' : ''}">
+        <span class="sch-when${live ? ' lv' : ''}">${when}</span>
+        <span class="sch-team th">${side(h, m.h, m.h)}</span>
+        <span class="sch-score">${score}</span>
+        <span class="sch-team ta">${side(a, m.a, m.a)}</span>
+      </div>`;
+    }).join('')}
+  `).join('');
 }
 
 // ── TEAMS TABLE ────────────────────────────────────────────────────────────
