@@ -7,7 +7,7 @@
 //   FD_FIXTURE         - optional path to a local standings JSON (testing)
 //   DRY_RUN            - optional, print the upsert instead of writing
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const SUPABASE_URL = 'https://kqwitbmocklwsmjcuxoy.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtxd2l0Ym1vY2tsd3NtamN1eG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjIxNzUsImV4cCI6MjA5NjUzODE3NX0.0CSZvNAy_Av4D4Kl0apgHCiEj2ecW-K1AXtYQUFSJRI';
@@ -51,21 +51,33 @@ function resolveTeamId(entryTeam) {
   return null;
 }
 
+// Repo secret takes precedence if one is ever configured; otherwise use
+// the league's committed key (free tier, no payment attached).
+const FD_KEY = process.env.FOOTBALL_DATA_KEY || '2f27120af3bb4f278030fbed1ff6ac40';
+
+async function fdGet(path) {
+  const res = await fetch(`https://api.football-data.org/v4${path}`, {
+    headers: { 'X-Auth-Token': FD_KEY },
+  });
+  if (!res.ok) {
+    console.error(`football-data.org ${path} responded ${res.status}: ${await res.text()}`);
+    process.exit(1);
+  }
+  return res.json();
+}
+
 async function fetchStandings() {
   if (process.env.FD_FIXTURE) {
     return JSON.parse(readFileSync(process.env.FD_FIXTURE, 'utf8'));
   }
-  // Repo secret takes precedence if one is ever configured; otherwise use
-  // the league's committed key (free tier, no payment attached).
-  const key = process.env.FOOTBALL_DATA_KEY || '2f27120af3bb4f278030fbed1ff6ac40';
-  const res = await fetch('https://api.football-data.org/v4/competitions/2000/standings', {
-    headers: { 'X-Auth-Token': key },
-  });
-  if (!res.ok) {
-    console.error(`football-data.org responded ${res.status}: ${await res.text()}`);
-    process.exit(1);
+  return fdGet('/competitions/2000/standings');
+}
+
+async function fetchMatches() {
+  if (process.env.FD_MATCHES_FIXTURE) {
+    return JSON.parse(readFileSync(process.env.FD_MATCHES_FIXTURE, 'utf8'));
   }
-  return res.json();
+  return fdGet('/competitions/2000/matches');
 }
 
 const data = await fetchStandings();
@@ -89,7 +101,23 @@ for (const standing of data.standings || []) {
 }
 
 console.log(`Parsed ${upserts.length} teams` + (unmatched.length ? `; unmatched: ${unmatched.join(', ')}` : ''));
-if (upserts.length === 0) { console.log('Nothing to write.'); process.exit(0); }
+
+// ── matches.json for the Schedule tab ──────────────────────────────────────
+const matchData = await fetchMatches();
+const compact = (matchData.matches || [])
+  .filter(m => m.utcDate)
+  .map(m => ({
+    d: m.utcDate,
+    s: m.status,
+    h: resolveTeamId(m.homeTeam || {}) || (m.homeTeam?.tla || m.homeTeam?.name || '?'),
+    a: resolveTeamId(m.awayTeam || {}) || (m.awayTeam?.tla || m.awayTeam?.name || '?'),
+    hs: m.score?.fullTime?.home ?? null,
+    as: m.score?.fullTime?.away ?? null,
+  }));
+writeFileSync('matches.json', JSON.stringify({ updated: new Date().toISOString(), matches: compact }) + '\n');
+console.log(`Wrote matches.json with ${compact.length} matches.`);
+
+if (upserts.length === 0) { console.log('No standings to write.'); process.exit(0); }
 
 if (process.env.DRY_RUN) {
   console.log(JSON.stringify(upserts, null, 2));
