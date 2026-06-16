@@ -240,6 +240,9 @@ input:focus{outline:none;border-color:var(--gold)}
 .sch-team{flex:1;font-weight:600;display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .sch-team.th{align-items:flex-end;text-align:right}
 .sch-team i{font-style:normal;font-size:9px;color:var(--gold);font-weight:500}
+.sch-pt{font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:1px}
+.sch-pt.act{color:var(--green)}
+.sch-pt.proj{color:var(--muted)}
 .sch-score{font-family:'JetBrains Mono',monospace;font-weight:700;min-width:42px;text-align:center}
 .sch-row.live .sch-score{color:var(--red)}
 
@@ -545,7 +548,7 @@ const PTS = {groupW:3,groupD:1};
     <div class="card">
       <div class="card-title">📅 Match Schedule</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6">
-        All times local · 📺 US TV: <b style="color:var(--text)">FOX / FS1</b> (English) · <b style="color:var(--text)">Telemundo / Peacock</b> (Spanish) · Scores refresh every ~10 min
+        All times local · Per team: <b style="color:var(--green)">actual pts</b> earned (played) or <b style="color:var(--muted)">~proj</b> expected (upcoming) · 📺 <b style="color:var(--text)">FOX/FS1</b>, <b style="color:var(--text)">Telemundo/Peacock</b> · Scores refresh ~10 min
       </div>
       <div id="schList"></div>
     </div>
@@ -625,7 +628,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v17';
+const APP_VERSION = 'v18';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -1075,6 +1078,21 @@ function renderLeaderboard() {
 }
 
 // ── SCHEDULE ───────────────────────────────────────────────────────────────
+// Expected points a team takes from one specific game vs `opp` (same model
+// as the season projection, but for a single matchup): 3/W, 1/D scoring.
+function matchExpPoints(team, opp) {
+  if (!team || !opp) return null;
+  const diff = opp.rank - team.rank;
+  const pWin = 1 / (1 + Math.pow(10, -diff / 40));
+  const pDraw = 0.25;
+  return 3 * pWin * (1 - pDraw) + 1 * pDraw;
+}
+// Actual points a team earned from a finished game given its score vs opponent.
+function matchActualPoints(myScore, oppScore) {
+  if (myScore == null || oppScore == null) return null;
+  return myScore > oppScore ? 3 : myScore === oppScore ? 1 : 0;
+}
+
 async function loadMatches() {
   try {
     const res = await fetch('matches.json?t=' + Date.now(), { cache: 'no-store' });
@@ -1112,12 +1130,17 @@ function renderSchedule() {
       const done = m.s === 'FINISHED';
       const score = (m.hs != null && m.as != null) ? `${m.hs}–${m.as}` : 'vs';
       const when = live ? 'LIVE' : done ? 'FT' : new Date(m.d).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-      const side = (t, raw, id) => `<span>${t ? t.flag + ' ' + t.id : raw}</span>${ownerOf(id) ? `<i>${ownerOf(id)}</i>` : ''}`;
+      const hPts = done ? matchActualPoints(m.hs, m.as) : matchExpPoints(h, a);
+      const aPts = done ? matchActualPoints(m.as, m.hs) : matchExpPoints(a, h);
+      const ptHtml = (v) => v == null ? '' :
+        (done ? `<b class="sch-pt act">${v} pt${v === 1 ? '' : 's'}</b>`
+              : `<b class="sch-pt proj">~${v.toFixed(1)} proj</b>`);
+      const side = (t, raw, id, pts) => `<span>${t ? t.flag + ' ' + t.id : raw}</span>${ownerOf(id) ? `<i>${ownerOf(id)}</i>` : ''}${ptHtml(pts)}`;
       return `<div class="sch-row${live ? ' live' : ''}">
         <span class="sch-when${live ? ' lv' : ''}">${when}</span>
-        <span class="sch-team th">${side(h, m.h, m.h)}</span>
+        <span class="sch-team th">${side(h, m.h, m.h, hPts)}</span>
         <span class="sch-score">${score}</span>
-        <span class="sch-team ta">${side(a, m.a, m.a)}</span>
+        <span class="sch-team ta">${side(a, m.a, m.a, aPts)}</span>
       </div>`;
     }).join('')}
   `).join('');
