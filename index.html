@@ -467,54 +467,18 @@ const PTS = {groupW:3,groupD:1};
     <span class="sync-dot" id="syncDot"></span>
     <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="syncLabel">Connecting...</span>
     <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Sync</button>
+    <button class="btn btn-out btn-sm" onclick="goCommish()" title="Commissioner">⚙</button>
   </div>
 </header>
 
-<!-- MANAGER PICKER SCREEN (shown before choosing who you are) -->
-<div id="screen-pick" class="view active">
-  <div class="wc-trophy">🏆</div>
-  <div class="pick-title">World Cup Pride</div>
-  <div class="pick-sub">Tap your name to enter</div>
-  <div class="manager-btns" id="mgrBtns"></div>
-  <div style="margin-top:32px">
-    <button class="btn btn-out btn-sm" onclick="enterAs('commissioner')">⚙ Commissioner View</button>
-  </div>
-</div>
-
-<!-- MAIN APP (shown after picking manager) -->
-<div id="screen-app" class="view">
+<!-- MAIN APP -->
+<div id="screen-app" class="view active">
   <div class="tabs">
-    <button class="tab active" onclick="showTab('draft',this)">⚡ Draft</button>
-    <button class="tab" onclick="showTab('board',this)">📋 Board</button>
-    <button class="tab" onclick="showTab('leaderboard',this)">🏆 Standings</button>
+    <button class="tab active" onclick="showTab('leaderboard',this)">🏆 Standings</button>
     <button class="tab" onclick="showTab('schedule',this)">📅 Schedule</button>
+    <button class="tab" onclick="showTab('board',this)">📋 Board</button>
     <button class="tab" onclick="showTab('teams',this)">📊 Teams</button>
     <button class="tab" id="tabSetupBtn" style="display:none" onclick="showTab('setup',this)">⚙ Setup</button>
-  </div>
-
-  <!-- DRAFT TAB -->
-  <div id="tab-draft" class="view active main">
-    <div id="clockBanner" class="clock-banner waiting">
-      <div>
-        <div class="clock-name" id="clockName">Loading...</div>
-        <div class="clock-sub" id="clockSub">—</div>
-      </div>
-      <span class="clock-tag wait-tag" id="clockTag">WAITING</span>
-    </div>
-
-    <div id="draftDone" class="complete-banner" style="display:none">
-      <h2>🎉 Draft Complete!</h2>
-      <p style="color:var(--muted);margin-top:6px;font-size:14px">Check Standings — scores update automatically during the tournament.</p>
-    </div>
-
-    <div id="teamPickerWrap">
-      <div class="search-wrap">
-        <span class="search-ico">🔍</span>
-        <input type="text" id="teamSearch" placeholder="Search teams..." oninput="renderTeams()"/>
-      </div>
-      <div class="gfilters" id="gfilters"></div>
-      <div class="team-grid" id="teamGrid"></div>
-    </div>
   </div>
 
   <!-- BOARD TAB -->
@@ -526,7 +490,7 @@ const PTS = {groupW:3,groupD:1};
   </div>
 
   <!-- LEADERBOARD TAB -->
-  <div id="tab-leaderboard" class="view main">
+  <div id="tab-leaderboard" class="view active main">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
         <div class="card-title" style="margin-bottom:0">🏆 Standings</div>
@@ -628,7 +592,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v18';
+const APP_VERSION = 'v19';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -690,14 +654,38 @@ async function init() {
   loadMatches().then(renderSchedule);
   setInterval(async () => { await loadMatches(); renderSchedule(); }, 120000);
 
-  // If URL has ?m=slug, auto-enter as that manager
+  // Draft is over — open straight into the app (no name-selection screen)
+  enterApp();
+}
+
+// Reveal the main app. Optional ?m=slug just highlights that manager as "you".
+function enterApp() {
   if (urlSlug) {
     const mgr = app.managers.find(m => m.slug === urlSlug);
-    if (mgr) { enterAs(mgr.id); return; }
+    if (mgr) { app.myManagerId = mgr.id; app.mySlug = mgr.slug; app.myName = mgr.name; }
   }
+  document.getElementById('screen-app').classList.add('active');
+  const share = document.getElementById('shareLink');
+  if (share) share.textContent = window.location.origin + window.location.pathname;
+  renderAll();
+}
 
-  // Show manager picker
-  renderManagerPicker();
+// Commissioner access (reset, setup, manual sync) via the header ⚙ button.
+function goCommish() {
+  if (!app.isCommish) {
+    const pw = prompt('Commissioner password:');
+    if (pw === null) return;
+    if (pw !== COMMISH_PW) { alert('Wrong password.'); return; }
+    app.isCommish = true;
+    document.getElementById('tabSetupBtn').style.display = '';
+    renderAll();
+  }
+  showTabByName('setup');
+}
+
+function showTabByName(name) {
+  const btn = [...document.querySelectorAll('.tab')].find(b => (b.getAttribute('onclick')||'').includes("'"+name+"'"));
+  if (btn) showTab(name, btn);
 }
 
 // Make the roster bulletproof against bad rows in the database:
@@ -797,6 +785,7 @@ function setSync(state) {
 // ── SCREENS ────────────────────────────────────────────────────────────────
 function renderManagerPicker() {
   const el = document.getElementById('mgrBtns');
+  if (!el) return;
   if (app.managers.length === 0) {
     // Draft not bootstrapped yet — show the fixed roster; first tap sets everything up
     el.innerHTML = DEFAULT_MGRS.map((n,i) => `
@@ -847,16 +836,15 @@ function enterAs(mgrId) {
     const newUrl = window.location.pathname + '?m=' + (mgr?.slug || mgrId);
     window.history.replaceState({}, '', newUrl);
   }
-  document.getElementById('screen-pick').classList.remove('active');
+  document.getElementById('screen-pick')?.classList.remove('active');
   document.getElementById('screen-app').classList.add('active');
   document.getElementById('tabSetupBtn').style.display = app.isCommish ? '' : 'none';
-  document.getElementById('shareLink').textContent = window.location.origin + window.location.pathname;
+  const share = document.getElementById('shareLink');
+  if (share) share.textContent = window.location.origin + window.location.pathname;
   renderAll();
 }
 
 function renderAll() {
-  renderClock();
-  renderTeams();
   renderBoard();
   renderLeaderboard();
   renderSchedule();
@@ -873,11 +861,20 @@ function showTab(name, btn) {
   if (name==='leaderboard') renderLeaderboard();
   if (name==='teams') renderTeamsTable();
   if (name==='board') renderBoard();
-  if (name==='schedule') renderSchedule();
+  if (name==='schedule') { renderSchedule(); requestAnimationFrame(scrollScheduleToToday); }
+}
+
+// Jump the schedule to today's date so nobody has to scroll past played games.
+function scrollScheduleToToday() {
+  const t = document.getElementById('sch-today');
+  if (!t) return;
+  t.scrollIntoView({ block: 'start' });
+  window.scrollBy(0, -90);   // clear the sticky header + tab bar
 }
 
 // ── DRAFT CLOCK ────────────────────────────────────────────────────────────
 function renderClock() {
+  if (!document.getElementById('clockBanner')) return;   // draft tab removed post-draft
   const pickIdx = app.picks.length;
   const isDone = pickIdx >= 48 || app.draftState.draft_complete;
 
@@ -922,6 +919,7 @@ function renderClock() {
 function renderGroupFilters() {
   const groups = ['ALL','A','B','C','D','E','F','G','H','I','J','K','L'];
   const el = document.getElementById('gfilters');
+  if (!el) return;
   el.innerHTML = groups.map(g => `
     <button class="gf ${app.activeGroup===g?'on':''}" onclick="setGroup('${g}')">${g==='ALL'?'All':'Grp '+g}</button>
   `).join('');
@@ -1122,8 +1120,17 @@ function renderSchedule() {
     if (!byDay.has(day)) byDay.set(day, []);
     byDay.get(day).push(m);
   });
-  el.innerHTML = [...byDay.entries()].map(([day, ms]) => `
-    <div class="sch-day">${day}</div>
+  // Anchor the first day that is today or later, so we can jump there
+  const entries = [...byDay.entries()];
+  const todayMid = new Date(); todayMid.setHours(0,0,0,0);
+  let anchorLabel = null;
+  for (const [label, ms] of entries) {
+    const dd = new Date(ms[0].d); dd.setHours(0,0,0,0);
+    if (dd.getTime() >= todayMid.getTime()) { anchorLabel = label; break; }
+  }
+  if (!anchorLabel && entries.length) anchorLabel = entries[entries.length-1][0];
+  el.innerHTML = entries.map(([day, ms]) => `
+    <div class="sch-day"${day===anchorLabel?' id="sch-today"':''}>${day}</div>
     ${ms.map(m => {
       const h = TEAM_MAP[m.h], a = TEAM_MAP[m.a];
       const live = m.s === 'IN_PLAY' || m.s === 'PAUSED';
