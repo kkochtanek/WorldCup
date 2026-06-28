@@ -109,10 +109,13 @@ const compact = (matchData.matches || [])
   .map(m => ({
     d: m.utcDate,
     s: m.status,
+    st: m.stage || null,                       // GROUP_STAGE, LAST_32, LAST_16, … (for the Budget tab's KO scoring)
     h: resolveTeamId(m.homeTeam || {}) || (m.homeTeam?.tla || m.homeTeam?.name || '?'),
     a: resolveTeamId(m.awayTeam || {}) || (m.awayTeam?.tla || m.awayTeam?.name || '?'),
     hs: m.score?.fullTime?.home ?? null,
     as: m.score?.fullTime?.away ?? null,
+    w: m.score?.winner === 'HOME_TEAM' ? 'H'    // actual winner incl. extra time / penalties
+       : m.score?.winner === 'AWAY_TEAM' ? 'A' : null,
   }));
 writeFileSync('matches.json', JSON.stringify({ updated: new Date().toISOString(), matches: compact }) + '\n');
 console.log(`Wrote matches.json with ${compact.length} matches.`);

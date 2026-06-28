@@ -310,6 +310,39 @@ input:focus{outline:none;border-color:var(--gold)}
 .lb-row.champ{border-color:var(--gold);background:linear-gradient(90deg,rgba(212,160,23,.12),transparent)}
 @media(max-width:600px){.champ-name{font-size:34px}.champ-trophy{font-size:42px}.champ-banner{padding:20px 14px}}
 
+/* ── BUDGET TAB ── */
+.bmgr-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.bmgr{
+  padding:7px 13px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;
+  border:1px solid var(--border);background:var(--navy2);color:var(--text);
+  font-family:'Inter',sans-serif;transition:all .15s;
+}
+.bmgr.on,.bmgr:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.budget-bar{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin:12px 0 8px}
+.budget-spend{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1px;line-height:1}
+.budget-spend.over{color:var(--red)}.budget-spend.ok{color:var(--gold)}
+.budget-spend small{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0}
+.budget-count{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--text)}
+.budget-count small{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.cap-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.cap{
+  padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;border:1px solid var(--border);color:var(--muted);
+}
+.cap.ok{border-color:var(--green);color:var(--green);background:rgba(0,140,69,.07)}
+.cap.bad{border-color:var(--red);color:var(--red);background:rgba(205,33,42,.07)}
+.bt-price{margin-left:auto;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:var(--text);padding-left:6px}
+.tcard.bt-on{border-color:var(--gold);background:var(--gold-dim)}
+.tcard.bt-on .tname{color:var(--gold)}
+.tcard.bt-on .bt-price{color:var(--gold)}
+.bt-pts{font-size:10px;color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace}
+.bt-rule{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);font-weight:400;letter-spacing:0;float:right}
+.brost{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.5}
+.brost .elim{text-decoration:line-through;opacity:.5}
+.budget-save-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 2px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.budget-errs{font-size:11px;color:var(--red);margin-top:6px;line-height:1.6}
+
 /* ── DRAFT COMPLETE ── */
 .complete-banner{
   background:linear-gradient(135deg,rgba(0,140,69,.18),transparent);
@@ -482,6 +515,29 @@ const PTS = {groupW:3,groupD:1};
 // TOURNAMENT_OVER back to false (and reset via the commissioner panel) to reopen.
 const TOURNAMENT_OVER = true;
 const CHAMPION_NAME = 'Hoskins';
+
+// ─── BUDGET LEAGUE (salary-cap side game over the Round of 32) ────────────────
+// Entirely separate from the snake draft: own roster table, own KO-only scoring,
+// teams may repeat across managers. The 32 entries are exactly the R32 field.
+const BUDGET_CAP = 100;
+const BUDGET_SIZE = 6;
+const BUDGET_TIERS = {
+  1:{name:'The Favorites'}, 2:{name:'Heavy Hitters'}, 3:{name:'Sleeper Contenders'},
+  4:{name:'Dark Horses'}, 5:{name:'Longshots'}, 6:{name:'Cinderella Pool'},
+};
+const BUDGET_FIELD = [
+  {id:'FRA',tier:1,price:46},{id:'ARG',tier:1,price:45},{id:'ESP',tier:1,price:37},{id:'ENG',tier:1,price:37},
+  {id:'BRA',tier:2,price:27},{id:'POR',tier:2,price:26},{id:'GER',tier:2,price:24},{id:'NED',tier:2,price:24},
+  {id:'NOR',tier:3,price:16},{id:'USA',tier:3,price:15},{id:'COL',tier:3,price:15},{id:'MAR',tier:3,price:14},{id:'BEL',tier:3,price:13},{id:'MEX',tier:3,price:13},
+  {id:'JPN',tier:4,price:13},{id:'SUI',tier:4,price:12},{id:'CRO',tier:4,price:11},{id:'SEN',tier:4,price:9},{id:'CIV',tier:4,price:8},{id:'SWE',tier:4,price:7},
+  {id:'AUT',tier:5,price:7},{id:'PAR',tier:5,price:6},{id:'ECU',tier:5,price:6},{id:'ALG',tier:5,price:5},{id:'BIH',tier:5,price:5},{id:'EGY',tier:5,price:5},
+  {id:'CAN',tier:6,price:7},{id:'AUS',tier:6,price:5},{id:'GHA',tier:6,price:4},{id:'RSA',tier:6,price:4},{id:'COD',tier:6,price:4},{id:'CPV',tier:6,price:3},
+];
+const BUDGET_MAP = Object.fromEntries(BUDGET_FIELD.map(t => [t.id, t]));
+
+// Aggregate knockout points: you bank a round's value only by WINNING that round's
+// match (extra time / penalties count via the synced `w` field). Lose → 0 that round.
+const KO_STAGE_PTS = { LAST_32:5, LAST_16:8, QUARTER_FINALS:13, SEMI_FINALS:21, FINAL:34, THIRD_PLACE:0 };
 </script>
 
 <!-- ─── HTML STRUCTURE ─────────────────────────────────────────────────────── -->
@@ -504,6 +560,7 @@ const CHAMPION_NAME = 'Hoskins';
     <button class="tab" onclick="showTab('schedule',this)">📅 Schedule</button>
     <button class="tab" onclick="showTab('board',this)">📋 Board</button>
     <button class="tab" onclick="showTab('teams',this)">📊 Teams</button>
+    <button class="tab" onclick="showTab('budget',this)">💰 Budget</button>
     <button class="tab" id="tabSetupBtn" style="display:none" onclick="showTab('setup',this)">⚙ Setup</button>
   </div>
 
@@ -548,6 +605,27 @@ const CHAMPION_NAME = 'Hoskins';
   <!-- TEAMS TAB -->
   <div id="tab-teams" class="view main">
     <div class="groups-grid" id="groupsGrid"></div>
+  </div>
+
+  <!-- BUDGET TAB -->
+  <div id="tab-budget" class="view main">
+    <div class="card">
+      <div class="card-title">💰 Budget League</div>
+      <div class="alert alert-info" style="font-size:12px">
+        A separate salary-cap game over the <b>Round of 32</b>. Build a 6-team roster under <b>$100</b> — teams may repeat across managers. Your score is the <b>aggregate knockout points</b> your teams win: R32 <b>+5</b>, R16 <b>+8</b>, QF <b>+13</b>, SF <b>+21</b>, Champion <b>+34</b>. A team that loses stops scoring. (This does not touch the snake-draft standings.)
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Pick which manager you are:</div>
+      <div class="bmgr-row" id="budgetIdentify"></div>
+      <div id="budgetBuilder"></div>
+    </div>
+    <div class="card" id="budgetGridCard" style="display:none">
+      <div class="card-title">Pick your 6 teams</div>
+      <div class="team-grid" id="budgetGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏅 Budget Standings <span style="font-size:11px;color:var(--muted);font-weight:400;font-family:'Inter'">· live knockout points</span></div>
+      <div class="lb-list" id="budgetStandings"></div>
+    </div>
   </div>
 
   <!-- SETUP TAB -->
@@ -619,7 +697,7 @@ const CHAMPION_NAME = 'Hoskins';
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v20';
+const APP_VERSION = 'v21';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -653,6 +731,10 @@ let app = {
   pendingTeamId: null,
   activeGroup: 'ALL',
   localMgrs: [...DEFAULT_MGRS],
+  budgetRosters: [],                                  // [{manager_id, teams:[ids], spend}]
+  budgetSel: new Set(),                               // working roster for the selected manager
+  budgetMgrSlug: localStorage.getItem('wc_budget_mgr') || null,
+  budgetLoadedFor: null,                              // slug whose saved roster is in budgetSel
 };
 
 // Detect ?m=slug in URL
@@ -794,6 +876,8 @@ async function loadAll() {
     const r4 = await new SupabaseQuery(sb, 'team_scores').select().execute();
     if (Array.isArray(r4.data)) r4.data.forEach(s => app.scores[s.team_id] = s);
 
+    await loadBudget();
+
     setSync('live');
   } catch(e) {
     app.lastError = String(e && e.message || e).slice(0,300);
@@ -877,6 +961,7 @@ function renderAll() {
   renderSchedule();
   renderTeamsTable();
   renderSetupManagers();
+  renderBudgetStandings();   // live KO points; the builder/grid render lazily on tab open
 }
 
 // ── TABS ───────────────────────────────────────────────────────────────────
@@ -888,6 +973,7 @@ function showTab(name, btn) {
   if (name==='leaderboard') renderLeaderboard();
   if (name==='teams') renderTeamsTable();
   if (name==='board') renderBoard();
+  if (name==='budget') renderBudget();
   if (name==='schedule') { renderSchedule(); requestAnimationFrame(scrollScheduleToToday); }
 }
 
@@ -1496,6 +1582,265 @@ async function resetAll() {
 
 function copyLink() {
   navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'));
+}
+
+// ── BUDGET LEAGUE ───────────────────────────────────────────────────────────
+// Separate salary-cap game. Reads/writes its own `budget_rosters` table and
+// scores purely off knockout results in matches.json — nothing here touches the
+// snake draft, its picks, or the group-stage standings.
+
+async function loadBudget() {
+  try {
+    const rb = await new SupabaseQuery(sb, 'budget_rosters').select().execute();
+    if (Array.isArray(rb.data)) app.budgetRosters = rb.data;
+  } catch(_) {}
+}
+
+// Which manager am I in the Budget game (defaults to the ?m= identity if any).
+function budgetMgr() {
+  const slug = app.budgetMgrSlug || app.mySlug;
+  return app.managers.find(m => m.slug === slug) || null;
+}
+
+// The actual winner of a knockout match (extra time / penalties via `w`,
+// falling back to the full-time score when `w` isn't present yet).
+function matchWinner(m) {
+  if (m.w === 'H' || m.w === 'A') return m.w;
+  if (m.hs != null && m.as != null && m.hs !== m.as) return m.hs > m.as ? 'H' : 'A';
+  return null;
+}
+function isKO(m) { return m.st && KO_STAGE_PTS[m.st] != null; }
+
+// Aggregate KO points: sum the value of every knockout match this team won.
+function teamKoPoints(id) {
+  let pts = 0;
+  for (const m of app.matches) {
+    if (m.s !== 'FINISHED' || !isKO(m)) continue;
+    const w = matchWinner(m);
+    if ((m.h === id && w === 'H') || (m.a === id && w === 'A')) pts += KO_STAGE_PTS[m.st];
+  }
+  return pts;
+}
+// A team is out once it has lost a finished knockout match.
+function teamEliminated(id) {
+  for (const m of app.matches) {
+    if (m.s !== 'FINISHED' || !isKO(m)) continue;
+    if (m.h !== id && m.a !== id) continue;
+    const w = matchWinner(m);
+    const won = (m.h === id && w === 'H') || (m.a === id && w === 'A');
+    if (w && !won) return true;
+  }
+  return false;
+}
+
+// Validate a set of team ids against every roster rule. Returns the spend,
+// per-tier counts, a list of human-readable errors, and an overall valid flag.
+function validateBudget(ids) {
+  const teams = ids.map(id => BUDGET_MAP[id]).filter(Boolean);
+  const spend = teams.reduce((s,t) => s + t.price, 0);
+  const byTier = {};
+  teams.forEach(t => byTier[t.tier] = (byTier[t.tier]||0) + 1);
+  const errors = [];
+  if (teams.length !== BUDGET_SIZE) errors.push(`Pick exactly ${BUDGET_SIZE} teams (have ${teams.length})`);
+  if (spend > BUDGET_CAP) errors.push(`$${spend - BUDGET_CAP} over the $${BUDGET_CAP} cap`);
+  if ((byTier[1]||0) > 1) errors.push('Max 1 from Tier 1');
+  if ((byTier[1]||0) + (byTier[2]||0) > 2) errors.push('Max 2 from Tier 1 + Tier 2');
+  for (let t = 1; t <= 6; t++) if ((byTier[t]||0) > 3) errors.push(`Max 3 from Tier ${t}`);
+  if (((byTier[5]||0) + (byTier[6]||0)) < 1) errors.push('Need ≥1 from Tier 5 or Tier 6');
+  return { spend, byTier, errors, valid: errors.length === 0 };
+}
+
+// Can this team be ADDED to the current selection without breaking a hard cap?
+// (The Tier 5/6 minimum isn't checked here — it can't be broken by adding.)
+function budgetCanAdd(id) {
+  if (app.budgetSel.has(id)) return { ok:true };
+  if (teamEliminated(id)) return { ok:false, msg:'Eliminated' };
+  if (app.budgetSel.size >= BUDGET_SIZE) return { ok:false, msg:'Roster full' };
+  const t = BUDGET_MAP[id];
+  const v = validateBudget([...app.budgetSel, id]);
+  if (v.spend > BUDGET_CAP) return { ok:false, msg:'Over budget' };
+  if ((v.byTier[1]||0) > 1) return { ok:false, msg:'Max 1 Tier 1' };
+  if ((v.byTier[1]||0) + (v.byTier[2]||0) > 2) return { ok:false, msg:'Max 2 Tier 1+2' };
+  if ((v.byTier[t.tier]||0) > 3) return { ok:false, msg:`Max 3 Tier ${t.tier}` };
+  return { ok:true };
+}
+
+function selectBudgetMgr(slug) {
+  app.budgetMgrSlug = slug;
+  localStorage.setItem('wc_budget_mgr', slug);
+  const mgr = app.managers.find(m => m.slug === slug);
+  const saved = mgr && app.budgetRosters.find(r => r.manager_id === mgr.id);
+  app.budgetSel = new Set(saved?.teams || []);
+  app.budgetLoadedFor = slug;
+  renderBudget();
+}
+
+function toggleBudgetTeam(id) {
+  if (app.budgetSel.has(id)) app.budgetSel.delete(id);
+  else {
+    const c = budgetCanAdd(id);
+    if (!c.ok) return;
+    app.budgetSel.add(id);
+  }
+  renderBudget();
+}
+
+async function saveBudgetRoster() {
+  const mgr = budgetMgr();
+  if (!mgr) { alert('Pick which manager you are first.'); return; }
+  const ids = [...app.budgetSel];
+  const v = validateBudget(ids);
+  if (!v.valid) { alert('Roster not valid:\n\n• ' + v.errors.join('\n• ')); return; }
+  const res = await new SupabaseQuery(sb, 'budget_rosters')
+    .upsert({ manager_id: mgr.id, teams: ids, spend: v.spend, updated_at: new Date().toISOString() });
+  if (res.error) {
+    alert('Save failed: ' + JSON.stringify(res.error).slice(0,200) +
+          '\n\n(If this mentions a missing relation, the budget_rosters table still needs to be created in Supabase.)');
+    return;
+  }
+  await loadBudget();
+  renderBudget();
+  alert('✅ Roster saved! Everyone can see it now.');
+}
+
+// ── Budget rendering ─────────────────────────────────────────────────────────
+function renderBudget() {
+  renderBudgetIdentify();
+  renderBudgetBuilder();
+  renderBudgetGrid();
+  renderBudgetStandings();
+}
+
+function renderBudgetIdentify() {
+  const el = document.getElementById('budgetIdentify');
+  if (!el) return;
+  // Lazily load my saved roster into the working set once data is available.
+  const activeSlug = app.budgetMgrSlug || app.mySlug;
+  if (activeSlug && app.budgetLoadedFor !== activeSlug && app.managers.length) {
+    const mgr = app.managers.find(m => m.slug === activeSlug);
+    if (mgr) {
+      const saved = app.budgetRosters.find(r => r.manager_id === mgr.id);
+      app.budgetSel = new Set(saved?.teams || []);
+      app.budgetLoadedFor = activeSlug;
+    }
+  }
+  const list = app.managers.length ? app.managers : DEFAULT_MGRS.map((n,i) => ({ name:n, slug:null }));
+  el.innerHTML = list.map(m => {
+    const on = m.slug && m.slug === (app.budgetMgrSlug || app.mySlug);
+    const has = m.slug && app.budgetRosters.some(r => r.manager_id === m.id);
+    return `<button class="bmgr ${on?'on':''}" ${m.slug?`onclick="selectBudgetMgr('${m.slug}')"`:'disabled'}>${m.name}${has?' ✓':''}</button>`;
+  }).join('') || '<span style="font-size:12px;color:var(--muted)">Loading roster…</span>';
+}
+
+function renderBudgetBuilder() {
+  const el = document.getElementById('budgetBuilder');
+  const gridCard = document.getElementById('budgetGridCard');
+  if (!el) return;
+  const mgr = budgetMgr();
+  if (!mgr) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-top:10px">Choose your name above to start building.</div>';
+    if (gridCard) gridCard.style.display = 'none';
+    return;
+  }
+  if (gridCard) gridCard.style.display = '';
+  const ids = [...app.budgetSel];
+  const v = validateBudget(ids);
+  const remaining = BUDGET_CAP - v.spend;
+  const c = (t) => v.byTier[t] || 0;
+  const cap = (label, used, max, ok) => `<span class="cap ${ok?'ok':'bad'}">${label} ${used}/${max}</span>`;
+  const t12 = c(1) + c(2);
+  const t56 = c(5) + c(6);
+  const saved = app.budgetRosters.find(r => r.manager_id === mgr.id);
+  const isSaved = saved && saved.teams && saved.teams.length === ids.length &&
+                  [...saved.teams].sort().join(',') === [...ids].sort().join(',');
+
+  el.innerHTML = `
+    <div class="budget-bar">
+      <div class="budget-spend ${v.spend>BUDGET_CAP?'over':'ok'}">$${v.spend} <small>/ $${BUDGET_CAP} · $${remaining} left</small></div>
+      <div class="budget-count">${ids.length}<small>/${BUDGET_SIZE} teams</small></div>
+    </div>
+    <div class="cap-chips">
+      ${cap('Tier 1', c(1), 1, c(1) <= 1)}
+      ${cap('Tier 1+2', t12, 2, t12 <= 2)}
+      ${cap('Tier 3', c(3), 3, c(3) <= 3)}
+      ${cap('Tier 4', c(4), 3, c(4) <= 3)}
+      ${cap('Tier 5', c(5), 3, c(5) <= 3)}
+      ${cap('Tier 6', c(6), 3, c(6) <= 3)}
+      <span class="cap ${t56>=1?'ok':'bad'}">Tier 5/6 ${t56>=1?'✓':'✗'} (need ≥1)</span>
+    </div>
+    <div class="budget-save-row">
+      <button class="btn btn-gold btn-sm" onclick="saveBudgetRoster()" ${v.valid?'':'disabled'}>
+        ${isSaved ? '✓ Saved — Re-save' : '💾 Save Roster'}
+      </button>
+      ${ids.length ? `<button class="btn btn-out btn-sm" onclick="app.budgetSel=new Set();renderBudget()">Clear</button>` : ''}
+      ${isSaved ? '<span style="font-size:11px;color:var(--green);font-weight:600">Locked in ✓</span>' : ''}
+    </div>
+    ${!v.valid && ids.length ? `<div class="budget-errs">${v.errors.map(e=>'• '+e).join('<br>')}</div>` : ''}`;
+}
+
+function renderBudgetGrid() {
+  const el = document.getElementById('budgetGrid');
+  if (!el) return;
+  if (!budgetMgr()) { el.innerHTML = ''; return; }
+  const tiers = [1,2,3,4,5,6];
+  const rules = {1:'max 1',2:'max 2 w/ T1',3:'max 3',4:'max 3',5:'max 3 · need T5/6',6:'max 3 · need T5/6'};
+  el.innerHTML = tiers.map(tier => {
+    const teams = BUDGET_FIELD.filter(t => t.tier === tier);
+    return `<div class="grp-head">Tier ${tier} · ${BUDGET_TIERS[tier].name}<span class="bt-rule">${rules[tier]}</span></div>` +
+      teams.map(bt => {
+        const t = TEAM_MAP[bt.id] || {flag:'🏳️', name:bt.id};
+        const sel = app.budgetSel.has(bt.id);
+        const elim = teamEliminated(bt.id);
+        const addable = sel || budgetCanAdd(bt.id).ok;
+        const ko = teamKoPoints(bt.id);
+        const cls = 'tcard' + (sel ? ' bt-on' : '') + ((!addable && !sel) || elim ? ' taken' : '');
+        const tap = (!sel && (!addable || elim)) ? '' : `onpointerup="toggleBudgetTeam('${bt.id}')"`;
+        return `<div class="${cls}" ${tap}>
+          <span class="tflag">${t.flag}</span>
+          <div style="min-width:0">
+            <div class="tname">${t.name}</div>
+            <div class="tgrp">${elim ? 'OUT' : ko ? `<span class="bt-pts">${ko} pts</span>` : 'Tier '+tier}</div>
+          </div>
+          <span class="bt-price">$${bt.price}</span>
+        </div>`;
+      }).join('');
+  }).join('');
+}
+
+function renderBudgetStandings() {
+  const el = document.getElementById('budgetStandings');
+  if (!el) return;
+  const rows = app.managers.map(m => {
+    const r = app.budgetRosters.find(b => b.manager_id === m.id);
+    const teams = r?.teams || [];
+    const pts = teams.reduce((s,id) => s + teamKoPoints(id), 0);
+    const spend = teams.reduce((s,id) => s + (BUDGET_MAP[id]?.price || 0), 0);
+    return { name:m.name, id:m.id, teams, spend: r ? spend : null, pts, has: !!r };
+  }).sort((a,b) => (b.has - a.has) || (b.pts - a.pts) || (b.spend - a.spend));
+
+  if (!rows.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted)">Standings appear once the roster loads.</div>'; return; }
+
+  const rc = (i) => i===0?'r1':i===1?'r2':i===2?'r3':'';
+  el.innerHTML = rows.map((m,i) => {
+    if (!m.has) return `<div class="lb-row"><div class="lb-rank">–</div>
+      <div class="lb-info"><div class="lb-name">${m.name}</div>
+      <div class="lb-teams">No roster yet</div></div></div>`;
+    const teamHtml = m.teams.map(id => {
+      const t = TEAM_MAP[id]; const out = teamEliminated(id);
+      return `<span class="${out?'elim':''}">${t?t.flag+' '+id:id}</span>`;
+    }).join(' · ');
+    return `<div class="lb-row">
+      <div class="lb-rank ${rc(i)}">${i+1}</div>
+      <div class="lb-info">
+        <div class="lb-name">${m.name}${m.id===app.myManagerId?' 👤':''}</div>
+        <div class="brost">${teamHtml}</div>
+      </div>
+      <div class="lb-stats">
+        <div><div class="lb-num lb-proj">$${m.spend ?? '—'}</div><div class="lb-ptsl">SPEND</div></div>
+        <div><div class="lb-num lb-tot">${m.pts}</div><div class="lb-ptsl on">KO PTS</div></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── START ──────────────────────────────────────────────────────────────────
