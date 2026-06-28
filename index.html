@@ -293,6 +293,23 @@ input:focus{outline:none;border-color:var(--gold)}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── CHAMPION BANNER ── */
+.champ-banner{
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,rgba(212,160,23,.18),rgba(0,140,69,.10) 60%,rgba(205,33,42,.12));
+  border:1px solid var(--gold);border-radius:14px;
+  padding:26px 22px;margin-bottom:16px;text-align:center;
+  box-shadow:0 2px 16px rgba(0,140,69,.12);
+}
+.champ-trophy{font-size:54px;line-height:1;animation:floatY 3s ease-in-out infinite}
+.champ-kicker{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:8px}
+.champ-name{font-family:'Bebas Neue',sans-serif;font-size:46px;letter-spacing:3px;color:var(--gold);line-height:1.05;margin-top:2px}
+.champ-sub{font-size:13px;color:var(--text);margin-top:4px}
+.champ-teams{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:14px}
+.champ-team{background:var(--navy);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.lb-row.champ{border-color:var(--gold);background:linear-gradient(90deg,rgba(212,160,23,.12),transparent)}
+@media(max-width:600px){.champ-name{font-size:34px}.champ-trophy{font-size:42px}.champ-banner{padding:20px 14px}}
+
 /* ── DRAFT COMPLETE ── */
 .complete-banner{
   background:linear-gradient(135deg,rgba(0,140,69,.18),transparent);
@@ -456,6 +473,15 @@ const PICK_ORDER = buildPickOrder();
 
 // Scoring: group stage only — 3 for a win, 1 for a draw, 0 for a loss
 const PTS = {groupW:3,groupD:1};
+
+// ─── TOURNAMENT STATUS ───────────────────────────────────────────────────────
+// The group stage is complete and (scoring being group-stage only) the pool is
+// decided. Flipping TOURNAMENT_OVER to true crowns the champion and switches the
+// standings into a "final" presentation — it does NOT touch any of the draft,
+// sync, or scoring machinery, so the whole thing is reusable next time: set
+// TOURNAMENT_OVER back to false (and reset via the commissioner panel) to reopen.
+const TOURNAMENT_OVER = true;
+const CHAMPION_NAME = 'Hoskins';
 </script>
 
 <!-- ─── HTML STRUCTURE ─────────────────────────────────────────────────────── -->
@@ -491,9 +517,10 @@ const PTS = {groupW:3,groupD:1};
 
   <!-- LEADERBOARD TAB -->
   <div id="tab-leaderboard" class="view active main">
+    <div class="champ-banner" id="championBanner" style="display:none"></div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        <div class="card-title" style="margin-bottom:0">🏆 Standings</div>
+        <div class="card-title" id="lbTitle" style="margin-bottom:0">🏆 Standings</div>
         <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Refresh</button>
       </div>
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
@@ -592,7 +619,7 @@ const PTS = {groupW:3,groupD:1};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v19';
+const APP_VERSION = 'v20';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -1042,7 +1069,37 @@ function setLbSort(key) {
   renderLeaderboard();
 }
 
+// Crown the champion once the tournament is over. Purely presentational: it
+// reads the same live standings everything else does, just dressed up.
+function renderChampion() {
+  const el = document.getElementById('championBanner');
+  if (!el) return;
+  if (!TOURNAMENT_OVER) { el.style.display = 'none'; return; }
+
+  // Resolve the champion against the live roster (falls back to the configured
+  // name if the roster hasn't loaded yet), and pull their final tally + teams.
+  const champ = app.managers.find(m => m.name.trim().toLowerCase() === CHAMPION_NAME.toLowerCase());
+  let pts = null, teamsHtml = '';
+  if (champ) {
+    const myPicks = app.picks.filter(p => p.manager_id === champ.id);
+    pts = myPicks.reduce((s,p) => s + getTeamPts(p.team_id), 0);
+    teamsHtml = myPicks.map(p => TEAM_MAP[p.team_id]).filter(Boolean)
+      .map(t => `<span class="champ-team">${t.flag} ${t.id}</span>`).join('');
+  }
+
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="champ-trophy">🏆</div>
+    <div class="champ-kicker">Group Stage Champion</div>
+    <div class="champ-name">${CHAMPION_NAME}</div>
+    <div class="champ-sub">World Cup Pride is in the books${pts!=null?` · ${pts} pts`:''}</div>
+    ${teamsHtml ? `<div class="champ-teams">${teamsHtml}</div>` : ''}`;
+}
+
 function renderLeaderboard() {
+  renderChampion();
+  const lbTitle = document.getElementById('lbTitle');
+  if (lbTitle) lbTitle.textContent = TOURNAMENT_OVER ? '🏆 Final Standings' : '🏆 Standings';
   const el = document.getElementById('lbList');
   if (!el) return;
   const chips = document.getElementById('lbSortChips');
@@ -1061,10 +1118,10 @@ function renderLeaderboard() {
   const rn = (i) => ['1st','2nd','3rd'][i] || `${i+1}th`;
 
   el.innerHTML = rows.map((m,i) => `
-    <div class="lb-row">
+    <div class="lb-row${TOURNAMENT_OVER && i===0?' champ':''}">
       <div class="lb-rank ${rc(i)}">${rn(i)}</div>
       <div class="lb-info">
-        <div class="lb-name">${m.name}${m.id===app.myManagerId?' 👤':''}</div>
+        <div class="lb-name">${TOURNAMENT_OVER && i===0?'🏆 ':''}${m.name}${m.id===app.myManagerId?' 👤':''}</div>
         <div class="lb-teams">${m.teams.map(t=>t.flag+' '+t.id).join(' · ')||'No picks yet'}</div>
       </div>
       <div class="lb-stats">
