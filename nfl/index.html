@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gridiron Pride</title>
+<link rel="icon" type="image/png" sizes="32x32" href="https://kkochtanek.github.io/WorldCup/nfl/icons/favicon-32.png?v=1"/>
+<link rel="apple-touch-icon" sizes="180x180" href="https://kkochtanek.github.io/WorldCup/nfl/icons/apple-touch-icon.png?v=1"/>
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href="https://kkochtanek.github.io/WorldCup/nfl/icons/apple-touch-icon.png?v=1"/>
+<link rel="manifest" href="manifest.json?v=1"/>
+<meta name="theme-color" content="#013369"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Gridiron"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/* Palette: white field, NFL shield blue + red accents */
+:root {
+  --bg:       #ffffff;
+  --card:     #ffffff;
+  --card2:    #f4f5f8;
+  --border:   #e2e4ea;
+  --accent:   #013369;
+  --accent-l: #0a4b95;
+  --accent-dim: rgba(1,51,105,0.08);
+  --red:      #d50a0a;
+  --text:     #12151c;
+  --muted:    #8a8d97;
+  --r:        10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+
+/* ── HEADER ── */
+.yardline{height:4px;background:linear-gradient(90deg,#013369 0 60%,#d50a0a 60% 100%)}
+header{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:12px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--text)}
+.logo em{color:var(--accent);font-style:normal}
+.hright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.sync-dot.live{background:var(--accent-l);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── VIEWS ── */
+.view{display:none;padding:0}
+.view.active{display:block}
+
+/* ── MANAGER PICKER SCREEN ── */
+#screen-pick{
+  min-height:100vh;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 20px;
+  background:radial-gradient(ellipse at top,rgba(1,51,105,.07) 0%,transparent 60%),var(--bg);
+}
+#screen-pick.active{display:flex}
+.wc-trophy{font-size:64px;margin-bottom:16px;animation:floatY 3s ease-in-out infinite}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.pick-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:4px;color:var(--accent);text-align:center;margin-bottom:6px}
+.pick-sub{color:var(--muted);font-size:14px;text-align:center;margin-bottom:40px}
+.manager-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:480px}
+.mgr-btn{
+  padding:14px 24px;border-radius:10px;
+  background:var(--card);border:1px solid var(--border);
+  color:var(--text);font-size:15px;font-weight:600;cursor:pointer;
+  transition:all .2s;font-family:'Inter',sans-serif;
+  display:flex;align-items:center;gap:10px;
+}
+.mgr-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.mgr-btn .draft-pos{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* ── TABS ── */
+.tabs{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  display:flex;gap:0;overflow-x:auto;
+  position:sticky;top:0;z-index:200;
+}
+.tab{
+  padding:12px 20px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--muted);
+  background:none;border:none;border-bottom:2px solid transparent;
+  white-space:nowrap;transition:all .2s;font-family:'Inter',sans-serif;
+}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── MAIN CONTENT ── */
+.main{padding:20px;max-width:1000px;margin:0 auto}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(20,30,40,.05)}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--accent);margin-bottom:14px}
+
+/* ── ON CLOCK BANNER ── */
+.clock-banner{
+  border-radius:var(--r);padding:18px 20px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.clock-banner.yours{
+  background:linear-gradient(135deg,rgba(1,51,105,.2),rgba(1,51,105,.05));
+  border:1px solid var(--accent);
+}
+.clock-banner.waiting{
+  background:var(--card);border:1px solid var(--border);
+}
+.clock-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--accent)}
+.clock-sub{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.clock-tag{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  padding:4px 10px;border-radius:5px;font-weight:600;
+}
+.clock-tag.yours-tag{background:var(--accent-dim);color:var(--accent-l);border:1px solid var(--accent)}
+.clock-tag.wait-tag{background:var(--card2);color:var(--muted);border:1px solid var(--border)}
+
+/* ── TEAM GRID ── */
+.search-wrap{position:relative;margin-bottom:10px}
+.search-wrap input{padding-left:36px}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.gfilters{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.gf{
+  padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;
+  border:1px solid var(--border);background:none;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;transition:all .15s;
+}
+.gf.on,.gf:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.team-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;
+  max-height:460px;overflow-y:auto;padding-right:2px;
+}
+.team-grid::-webkit-scrollbar{width:3px}
+.team-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.grp-head{
+  grid-column:1/-1;
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;
+  color:var(--accent);padding:10px 2px 3px;border-bottom:1px solid var(--border);
+}
+.grp-head:first-child{padding-top:2px}
+.tcard{
+  background:var(--card2);border:1px solid var(--border);border-radius:8px;
+  padding:9px 11px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:9px;
+}
+.tcard:hover:not(.taken){border-color:var(--accent);background:var(--accent-dim)}
+.tcard.taken{opacity:.28;cursor:not-allowed}
+.tcard.taken .tname{text-decoration:line-through}
+.tflag{font-size:20px;line-height:1;width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tflag img{width:22px;height:22px;object-fit:contain}
+.tname{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tgrp{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+input[type=text],input[type=password]{
+  background:var(--card2);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);padding:9px 12px;font-size:14px;
+  font-family:'Inter',sans-serif;width:100%;transition:border .2s;
+}
+input:focus{outline:none;border-color:var(--accent)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 18px;border-radius:7px;border:none;cursor:pointer;
+  font-weight:600;font-size:13px;transition:all .2s;font-family:'Inter',sans-serif;
+}
+.btn-gold{background:var(--accent);color:#fff}
+.btn-gold:hover{background:var(--accent-l)}
+.btn-out{background:none;border:1px solid var(--border);color:var(--text)}
+.btn-out:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-red{background:rgba(213,10,10,.1);border:1px solid var(--red);color:var(--red)}
+
+/* ── DRAFT BOARD ── */
+.board-grid{display:flex;flex-direction:column;gap:7px}
+.brow{
+  background:var(--card2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;transition:border .2s;
+}
+.brow.onclock{border-color:var(--accent);background:var(--accent-dim)}
+.brow.me{border-color:rgba(1,51,105,.4)}
+.brow-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.brow-name{font-weight:700;font-size:13px}
+.brow-count{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{
+  background:var(--card);border:1px solid var(--border);border-radius:4px;
+  padding:2px 7px;font-size:11px;display:flex;align-items:center;gap:4px;
+}
+.chip img{width:14px;height:14px;object-fit:contain}
+
+/* ── LEADERBOARD ── */
+.lb-list{display:flex;flex-direction:column;gap:6px}
+.lb-row{
+  background:var(--card2);border:1px solid var(--border);border-radius:8px;
+  padding:9px 13px;display:flex;align-items:center;gap:12px;
+}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:21px;min-width:30px;text-align:center;color:var(--muted)}
+.lb-rank.r1{color:#d4a017}.lb-rank.r2{color:#9a9a9a}.lb-rank.r3{color:#cd7f32}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-weight:700;font-size:14px}
+.lb-teams{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.45}
+.lb-stats{display:flex;gap:13px;align-items:flex-end}
+.lb-num{font-family:'Bebas Neue',sans-serif;font-size:21px;color:var(--text);letter-spacing:1px;text-align:right;line-height:1}
+.lb-num.lb-proj{color:var(--muted)}
+.lb-num.lb-tot{color:var(--accent);font-size:26px}
+.lb-ptsl{font-size:9px;color:var(--muted);text-align:right;font-family:'JetBrains Mono',monospace;margin-top:2px}
+.lb-ptsl.on{color:var(--accent);font-weight:700}
+
+/* ── SETUP ── */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:680px){.setup-grid{grid-template-columns:1fr}}
+.mgr-inputs{display:flex;flex-direction:column;gap:7px}
+.mgr-row{display:flex;align-items:center;gap:8px}
+.pos-badge{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--accent);background:var(--accent-dim);
+  border-radius:4px;padding:2px 7px;min-width:26px;text-align:center;
+}
+.pts-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.pc{background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.pc b{color:var(--accent)}
+.alert{padding:11px 14px;border-radius:7px;font-size:13px;margin-bottom:12px;line-height:1.5}
+.alert-info{background:rgba(41,128,185,.1);border:1px solid rgba(41,128,185,.3);color:#2b6ba3}
+.alert-warn{background:rgba(1,51,105,.08);border:1px solid var(--accent);color:var(--accent-l)}
+.alert-ok{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);color:#218a52}
+
+/* ── SCHEDULE ── */
+.sch-day{
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;
+  color:var(--accent);padding:14px 0 4px;border-bottom:1px solid var(--border);
+  text-transform:uppercase;
+}
+.sch-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(20,30,40,.05);font-size:13px}
+.sch-when{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-width:72px}
+.sch-when.lv{color:var(--red);font-weight:700;animation:pulse 1.8s infinite}
+.sch-team{flex:1;font-weight:600;display:flex;align-items:center;gap:6px;flex-direction:column;line-height:1.25;min-width:0}
+.sch-team.th{align-items:flex-end;text-align:right}
+.sch-team i{font-style:normal;font-size:9px;color:var(--accent);font-weight:500}
+.sch-tname{display:flex;align-items:center;gap:5px}
+.sch-team.th .sch-tname{flex-direction:row-reverse}
+.sch-tname img{width:16px;height:16px;object-fit:contain}
+.sch-pt{font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:1px}
+.sch-pt.act{color:#218a52}
+.sch-pt.proj{color:var(--muted)}
+.sch-score{font-family:'JetBrains Mono',monospace;font-weight:700;min-width:42px;text-align:center}
+.sch-row.live .sch-score{color:var(--red)}
+
+/* ── GROUP CARDS (Teams tab) ── */
+.groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.gcard{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 12px;box-shadow:0 1px 3px rgba(20,30,40,.05);
+}
+.gcard-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--accent);
+  border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:5px;
+}
+.gcard-cols{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted)}
+.gcard-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.gpos{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;width:12px}
+.gflag{font-size:17px;line-height:1;width:18px;height:18px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.gflag img{width:18px;height:18px;object-fit:contain}
+.gteam{flex:1;font-weight:600;min-width:0;line-height:1.25;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.gteam .gowner{display:block;font-size:10px;color:var(--accent);font-weight:500}
+.gwdl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.gpts{font-weight:700;color:var(--text);min-width:26px;text-align:right;font-size:14px}
+
+/* ── CONFIRM MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  display:flex;align-items:center;justify-content:center;
+  z-index:999;padding:20px;
+}
+.modal{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:28px;max-width:380px;width:100%;text-align:center;
+}
+.modal-flag{font-size:56px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.modal-flag img{width:72px;height:72px;object-fit:contain}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--accent);margin-bottom:6px}
+.modal-sub{font-size:14px;color:var(--muted);margin-bottom:22px}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+
+/* ── LOADING ── */
+.loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:60vh;gap:12px;color:var(--muted);font-size:14px;
+}
+.spinner{
+  width:36px;height:36px;border:3px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── DRAFT COMPLETE ── */
+.complete-banner{
+  background:linear-gradient(135deg,rgba(1,51,105,.16),transparent);
+  border:1px solid var(--accent);border-radius:var(--r);
+  padding:22px;text-align:center;margin-bottom:18px;
+}
+.complete-banner h2{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--accent);letter-spacing:3px}
+
+footer{text-align:center;padding:22px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:40px;font-family:'JetBrains Mono',monospace}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  .main{padding:10px}
+  .card{padding:12px;margin-bottom:10px}
+  .clock-banner{padding:12px 14px;margin-bottom:10px}
+  .clock-name{font-size:19px}
+  .clock-sub{font-size:11px}
+  header{padding:9px 14px}
+  .logo{font-size:18px;letter-spacing:2px}
+  .tab{padding:10px 13px;font-size:12px}
+  .team-grid{grid-template-columns:repeat(2,1fr);max-height:55vh}
+  .tcard{padding:8px 9px;gap:7px}
+  .lb-stats{gap:9px}
+  .lb-num{font-size:17px}
+  .lb-num.lb-tot{font-size:21px}
+  .lb-teams{font-size:9px}
+  .groups-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .gcard{padding:8px 9px}
+  .gcard-row{font-size:11px;gap:5px;padding:3px 0}
+  .gflag{width:14px;height:14px}
+  .gflag img{width:14px;height:14px}
+  .gwdl{font-size:9px}
+  .mgr-btn{padding:13px 18px;font-size:14px}
+  .manager-btns{gap:9px}
+  footer{padding:16px;font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- CONFIG: same Supabase project as the World Cup app, separate nfl_-prefixed tables -->
+<script>
+const SUPABASE_URL = 'https://kqwitbmocklwsmjcuxoy.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtxd2l0Ym1vY2tsd3NtamN1eG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjIxNzUsImV4cCI6MjA5NjUzODE3NX0.0CSZvNAy_Av4D4Kl0apgHCiEj2ecW-K1AXtYQUFSJRI';
+</script>
+
+<script>
+// ─── SUPABASE CLIENT (lightweight, no npm needed) ───────────────────────────
+class SupabaseClient {
+  constructor(url, key) {
+    this.url = url; this.key = key;
+  }
+  headers() {
+    return { 'Content-Type':'application/json', 'apikey': this.key, 'Authorization': 'Bearer ' + this.key };
+  }
+  async from(table) { return new SupabaseQuery(this, table); }
+}
+class SupabaseQuery {
+  constructor(client, table) {
+    this.client = client; this.table = table;
+    this._select = '*'; this._filters = []; this._single = false;
+  }
+  select(cols) { this._select = cols||'*'; return this; }
+  eq(col,val) { this._filters.push(`${col}=eq.${val}`); return this; }
+  order(col,{ascending}={}) { this._order = `${col}.${ascending?'asc':'desc'}`; return this; }
+  single() { this._single = true; return this; }
+  async execute() {
+    let url = `${this.client.url}/rest/v1/${this.table}?select=${this._select}`;
+    if (this._filters.length) url += '&' + this._filters.join('&');
+    if (this._order) url += `&order=${this._order}`;
+    const res = await fetch(url, { headers: this.client.headers() });
+    const data = await res.json();
+    return { data: this._single ? data[0] : data, error: res.ok ? null : data };
+  }
+  async insert(rows) {
+    const res = await fetch(`${this.client.url}/rest/v1/${this.table}`, {
+      method:'POST', headers:{...this.client.headers(),'Prefer':'return=representation'},
+      body: JSON.stringify(Array.isArray(rows)?rows:[rows])
+    });
+    const data = await res.json();
+    return { data, error: res.ok ? null : data };
+  }
+  async update(vals) {
+    let url = `${this.client.url}/rest/v1/${this.table}?`;
+    if (this._filters.length) url += this._filters.join('&');
+    const res = await fetch(url, {
+      method:'PATCH', headers:{...this.client.headers(),'Prefer':'return=representation'},
+      body: JSON.stringify(vals)
+    });
+    const data = await res.json();
+    return { data, error: res.ok ? null : data };
+  }
+  async upsert(rows) {
+    const res = await fetch(`${this.client.url}/rest/v1/${this.table}`, {
+      method:'POST', headers:{...this.client.headers(),'Prefer':'return=representation,resolution=merge-duplicates'},
+      body: JSON.stringify(Array.isArray(rows)?rows:[rows])
+    });
+    const data = await res.json();
+    return { data, error: res.ok ? null : data };
+  }
+}
+const sb = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON);
+</script>
+
+<!-- ─── TEAMS DATA ─────────────────────────────────────────────────────────── -->
+<script>
+// All 32 NFL teams. `rank` is a preseason power ranking (1=best, 32=worst)
+// used only to balance the snake draft and to project win expectancy before
+// results roll in — it's a rough estimate, not a live rating, and matters
+// less and less as actual game results (via ESPN) come in each week.
+const TEAMS = [
+  {id:'PHI',name:'Philadelphia Eagles',conf:'NFC',div:'NFC East',rank:1},
+  {id:'KC', name:'Kansas City Chiefs', conf:'AFC',div:'AFC West',rank:2},
+  {id:'BAL',name:'Baltimore Ravens',   conf:'AFC',div:'AFC North',rank:3},
+  {id:'BUF',name:'Buffalo Bills',      conf:'AFC',div:'AFC East',rank:4},
+  {id:'DET',name:'Detroit Lions',      conf:'NFC',div:'NFC North',rank:5},
+  {id:'GB', name:'Green Bay Packers',  conf:'NFC',div:'NFC North',rank:6},
+  {id:'DEN',name:'Denver Broncos',     conf:'AFC',div:'AFC West',rank:7},
+  {id:'LAR',name:'Los Angeles Rams',   conf:'NFC',div:'NFC West',rank:8},
+  {id:'SF', name:'San Francisco 49ers',conf:'NFC',div:'NFC West',rank:9},
+  {id:'PIT',name:'Pittsburgh Steelers',conf:'AFC',div:'AFC North',rank:10},
+  {id:'MIN',name:'Minnesota Vikings',  conf:'NFC',div:'NFC North',rank:11},
+  {id:'LAC',name:'Los Angeles Chargers',conf:'AFC',div:'AFC West',rank:12},
+  {id:'HOU',name:'Houston Texans',     conf:'AFC',div:'AFC South',rank:13},
+  {id:'CIN',name:'Cincinnati Bengals', conf:'AFC',div:'AFC North',rank:14},
+  {id:'TB', name:'Tampa Bay Buccaneers',conf:'NFC',div:'NFC South',rank:15},
+  {id:'SEA',name:'Seattle Seahawks',   conf:'NFC',div:'NFC West',rank:16},
+  {id:'WSH',name:'Washington Commanders',conf:'NFC',div:'NFC East',rank:17},
+  {id:'ARI',name:'Arizona Cardinals',  conf:'NFC',div:'NFC West',rank:18},
+  {id:'CHI',name:'Chicago Bears',      conf:'NFC',div:'NFC North',rank:19},
+  {id:'IND',name:'Indianapolis Colts', conf:'AFC',div:'AFC South',rank:20},
+  {id:'ATL',name:'Atlanta Falcons',    conf:'NFC',div:'NFC South',rank:21},
+  {id:'MIA',name:'Miami Dolphins',     conf:'AFC',div:'AFC East',rank:22},
+  {id:'DAL',name:'Dallas Cowboys',     conf:'NFC',div:'NFC East',rank:23},
+  {id:'NO', name:'New Orleans Saints', conf:'NFC',div:'NFC South',rank:24},
+  {id:'NYJ',name:'New York Jets',      conf:'AFC',div:'AFC East',rank:25},
+  {id:'JAX',name:'Jacksonville Jaguars',conf:'AFC',div:'AFC South',rank:26},
+  {id:'NE', name:'New England Patriots',conf:'AFC',div:'AFC East',rank:27},
+  {id:'LV', name:'Las Vegas Raiders',  conf:'AFC',div:'AFC West',rank:28},
+  {id:'CAR',name:'Carolina Panthers',  conf:'NFC',div:'NFC South',rank:29},
+  {id:'CLE',name:'Cleveland Browns',   conf:'AFC',div:'AFC North',rank:30},
+  {id:'NYG',name:'New York Giants',    conf:'NFC',div:'NFC East',rank:31},
+  {id:'TEN',name:'Tennessee Titans',   conf:'AFC',div:'AFC South',rank:32},
+];
+const TEAM_MAP = Object.fromEntries(TEAMS.map(t => [t.id, t]));
+function logoUrl(id) { return `https://a.espn.com/i/teamlogos/nfl/500/${id.toLowerCase()}.png`; }
+
+const MGR_COUNT = 6;
+const DEFAULT_MGRS = ['Kochtanek','Geiger','Hoskins','Weagley','Malaney','Hogan'];
+const COMMISH_PW = 'kurtrambus';
+const TOTAL_PICKS = TEAMS.length; // 32 teams, 6 managers — snake with an uneven last round
+
+// Snake pick order across MGR_COUNT managers, sliced to exactly TOTAL_PICKS.
+// 32 doesn't divide evenly by 6, so the last round is partial (2 managers
+// get a 6th team, the other 4 stop at 5) — same continuation the snake
+// order would naturally produce.
+function buildPickOrder() {
+  const order = [];
+  let round = 0;
+  while (order.length < TOTAL_PICKS) {
+    const fwd = Array.from({length:MGR_COUNT},(_,i)=>i);
+    const row = round%2===0 ? fwd : fwd.reverse();
+    order.push(...row);
+    round++;
+  }
+  return order.slice(0,TOTAL_PICKS);
+}
+const PICK_ORDER = buildPickOrder();
+
+// Scoring: regular season only — 1 pt per win, 0.5 for a tie, 0 for a loss
+const PTS = {win:1,tie:0.5};
+</script>
+
+<!-- ─── HTML STRUCTURE ─────────────────────────────────────────────────────── -->
+
+<div class="yardline"></div>
+<header>
+  <div class="logo">Gridiron <em>Pride</em></div>
+  <div class="hright">
+    <span class="sync-dot" id="syncDot"></span>
+    <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="syncLabel">Connecting...</span>
+    <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Sync</button>
+    <button class="btn btn-out btn-sm" onclick="goCommish()" title="Commissioner">⚙</button>
+  </div>
+</header>
+
+<!-- MANAGER PICKER -->
+<div id="screen-pick" class="view active">
+  <div class="wc-trophy">🏈</div>
+  <div class="pick-title">GRIDIRON PRIDE</div>
+  <div class="pick-sub">Tap your name to enter the draft</div>
+  <div class="manager-btns" id="mgrBtns"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="screen-app" class="view">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('draft',this)">🎯 Draft</button>
+    <button class="tab" onclick="showTab('leaderboard',this)">🏆 Standings</button>
+    <button class="tab" onclick="showTab('schedule',this)">📅 Schedule</button>
+    <button class="tab" onclick="showTab('board',this)">📋 Board</button>
+    <button class="tab" onclick="showTab('teams',this)">🏈 Teams</button>
+    <button class="tab" id="tabSetupBtn" style="display:none" onclick="showTab('setup',this)">⚙ Setup</button>
+  </div>
+
+  <!-- DRAFT TAB -->
+  <div id="tab-draft" class="view main active">
+    <div id="draftDone" class="complete-banner" style="display:none">
+      <h2>🏆 Draft Complete!</h2>
+      <div style="color:var(--muted);font-size:13px;margin-top:6px">All 32 teams are on the board — check Standings for the live race.</div>
+    </div>
+    <div class="clock-banner waiting" id="clockBanner">
+      <div>
+        <div class="clock-name" id="clockName">—</div>
+        <div class="clock-sub" id="clockSub">—</div>
+      </div>
+      <div class="clock-tag wait-tag" id="clockTag">WAITING</div>
+    </div>
+    <div class="card" id="teamPickerWrap">
+      <div class="card-title">Available Teams</div>
+      <div class="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input type="text" id="teamSearch" placeholder="Search teams..." oninput="renderTeams()"/>
+      </div>
+      <div class="gfilters" id="gfilters"></div>
+      <div class="team-grid" id="teamGrid"></div>
+    </div>
+  </div>
+
+  <!-- BOARD TAB -->
+  <div id="tab-board" class="view main">
+    <div class="card">
+      <div class="card-title">Draft Board</div>
+      <div class="board-grid" id="boardGrid"></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD TAB -->
+  <div id="tab-leaderboard" class="view main">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">🏆 Standings</div>
+        <button class="btn btn-out btn-sm" onclick="syncScores()">⟳ Refresh</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--muted)">Sort by</span>
+        <div class="gfilters" id="lbSortChips" style="margin-bottom:0"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+        PTS earned so far · PROJ expected from unplayed games · TOTAL aggregate outlook
+      </div>
+      <div class="lb-list" id="lbList"></div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE TAB -->
+  <div id="tab-schedule" class="view main">
+    <div class="card">
+      <div class="card-title">📅 Weekly Schedule</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+        All times local · Per team: <b style="color:#218a52">actual pts</b> earned (played) or <b style="color:var(--muted)">~proj</b> expected (upcoming) · Scores refresh ~15 min
+      </div>
+      <div id="schList"></div>
+    </div>
+  </div>
+
+  <!-- TEAMS TAB -->
+  <div id="tab-teams" class="view main">
+    <div class="groups-grid" id="groupsGrid"></div>
+  </div>
+
+  <!-- SETUP TAB -->
+  <div id="tab-setup" class="view main">
+    <div class="setup-grid">
+      <div class="card">
+        <div class="card-title">👥 Managers</div>
+        <div class="alert alert-info" style="font-size:12px">
+          <b>Commissioner only.</b> The six managers are fixed — randomize the draft order if you want, then hit Save & Restart Draft. Saving wipes existing picks.
+        </div>
+        <div class="mgr-inputs" id="mgrInputs"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold btn-sm" onclick="saveManagers()">💾 Save & Restart Draft</button>
+          <button class="btn btn-out btn-sm" onclick="shuffleManagers()">🔀 Randomize Order</button>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <div class="alert alert-warn" style="font-size:12px">
+            Out of time? Auto-complete fills only the <b>remaining</b> picks — everything already drafted stays exactly as is. Teams are assigned by projected win total, balanced so all six rosters come out as even as possible.
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="autoDraftRemaining()">⚡ Auto-Complete Draft</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📡 Live Scores</div>
+        <div class="alert alert-info" style="font-size:12px">
+          Scores sync automatically from ESPN via GitHub Actions — no API key needed, standings update on every device on their own. ⟳ Sync in the header forces a manual refresh from this browser.
+        </div>
+        <div style="margin-top:4px">
+          <div class="pts-chips">
+            <div class="pc">Win <b>+1</b></div>
+            <div class="pc">Tie <b>+0.5</b></div>
+            <div class="pc">Loss <b>+0</b></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Share this link with your group:</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:10px;word-break:break-all;color:var(--muted)" id="shareLink">—</div>
+          <button class="btn btn-out btn-sm" style="margin-top:8px" onclick="copyLink()">📋 Copy Link</button>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <button class="btn btn-red btn-sm" onclick="resetAll()">⚠ Reset & Rebuild League</button>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">League health</div>
+          <div id="debugBox" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7;word-break:break-word">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM PICK MODAL -->
+<div class="modal-bg" id="modal" style="display:none">
+  <div class="modal">
+    <div class="modal-flag" id="modalFlag">🏈</div>
+    <div class="modal-title" id="modalName">—</div>
+    <div class="modal-sub" id="modalSub">Confirm your pick?</div>
+    <div class="modal-btns">
+      <button class="btn btn-out" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmPick()">✓ Draft This Team</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APP LOGIC ──────────────────────────────────────────────────────────── -->
+<script>
+// ── SELF-UPDATE ────────────────────────────────────────────────────────────
+// Browsers (especially desktop) cache this page hard. Compare the deployed
+// version stamp against ours and reload once when a new one ships.
+const APP_VERSION = 'v1';
+async function checkForUpdate() {
+  try {
+    const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
+    if (!res.ok) return;
+    const m = (await res.text()).match(/APP_VERSION = '([^']+)'/);
+    if (m && m[1] !== APP_VERSION && !sessionStorage.getItem('nfl_reloaded_'+m[1])) {
+      sessionStorage.setItem('nfl_reloaded_'+m[1], '1');
+      window.location.reload();
+    }
+  } catch(_) {}
+}
+checkForUpdate();
+setInterval(checkForUpdate, 300000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let app = {
+  myManagerId: null,   // which manager am I (db id)
+  mySlug: null,
+  myName: null,
+  isCommish: false,
+  managers: [],        // [{id, name, slug, draft_position}] (normalized)
+  rawManagers: [],     // managers exactly as stored in the DB (for diagnostics)
+  lastError: null,
+  picks: [],           // [{id, manager_id, team_id, pick_number}]
+  scores: {},          // teamId -> {wins,losses,ties,points}
+  matches: [],         // [{d,s,h,a,hs,as,w}] from matches.json
+  draftState: { current_pick:1, draft_started:false, draft_complete:false },
+  lbSort: localStorage.getItem('nfl_lbsort') || 'pts',
+  pendingTeamId: null,
+  activeGroup: 'ALL',
+  localMgrs: [...DEFAULT_MGRS],
+};
+
+// Detect ?m=slug in URL
+const urlParams = new URLSearchParams(window.location.search);
+const urlSlug = urlParams.get('m');
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+async function init() {
+  setSync('connecting');
+  await loadAll();
+  await ensureRoster();
+  setSync('live');
+  renderManagerPicker();
+  renderAll();
+
+  // Set up polling for real-time updates (every 4s)
+  setInterval(async () => {
+    await loadAll();
+    renderAll();
+    maybeAutoPick();
+  }, 4000);
+
+  // Keep live scores fresh: sync now and every 2 minutes (no key needed — ESPN is open)
+  syncScores();
+  setInterval(syncScores, 120000);
+
+  // Match schedule: load now and every 2 minutes
+  loadMatches().then(renderSchedule);
+  setInterval(async () => { await loadMatches(); renderSchedule(); }, 120000);
+
+  // Jump straight in if a manager link was shared (?m=slug)
+  if (urlSlug) {
+    const mgr = app.managers.find(m => m.slug === urlSlug);
+    if (mgr) { enterAs(mgr.id); return; }
+  }
+}
+
+// Commissioner access (reset, setup, manual sync) via the header ⚙ button.
+function goCommish() {
+  if (!app.isCommish) {
+    const pw = prompt('Commissioner password:');
+    if (pw === null) return;
+    if (pw !== COMMISH_PW) { alert('Wrong password.'); return; }
+    app.isCommish = true;
+    document.getElementById('tabSetupBtn').style.display = '';
+  }
+  document.getElementById('screen-pick').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  const share = document.getElementById('shareLink');
+  if (share) share.textContent = window.location.origin + window.location.pathname;
+  renderAll();
+  showTabByName('setup');
+}
+
+function showTabByName(name) {
+  const btn = [...document.querySelectorAll('.tab')].find(b => (b.getAttribute('onclick')||'').includes("'"+name+"'"));
+  if (btn) showTab(name, btn);
+}
+
+// Make the roster bulletproof against bad rows in the database:
+// ignore rows that aren't one of our six names, collapse duplicates
+// (earliest row per name wins), remap picks to the kept rows, and
+// reassign draft positions 0..n-1 so the snake order always resolves.
+const DEFAULT_SET = new Set(DEFAULT_MGRS.map(n => n.toLowerCase()));
+function normalizeManagers(mgrs, picks) {
+  const byName = new Map();
+  const alias = {};
+  [...mgrs]
+    .filter(m => m && typeof m.name === 'string' && DEFAULT_SET.has(m.name.trim().toLowerCase()))
+    .sort((a,b) => a.id - b.id)
+    .forEach(m => {
+      const key = m.name.trim().toLowerCase();
+      if (byName.has(key)) alias[m.id] = byName.get(key).id;
+      else byName.set(key, {...m});
+    });
+  picks.forEach(p => { if (alias[p.manager_id] !== undefined) p.manager_id = alias[p.manager_id]; });
+  const kept = [...byName.values()].sort((a,b) => (a.draft_position - b.draft_position) || (a.id - b.id));
+  kept.forEach((m,i) => m.draft_position = i);
+  return kept;
+}
+
+// Create any of the six managers that don't exist yet. Runs once on page
+// load (and again on demand), so the league heals itself on any device.
+let rosterHealAttempted = false;
+async function ensureRoster() {
+  if (rosterHealAttempted) return;
+  rosterHealAttempted = true;
+  try {
+    const have = new Set(app.managers.map(m => m.name.trim().toLowerCase()));
+    const missing = DEFAULT_MGRS.map((n,i) => ({n,i})).filter(({n}) => !have.has(n.toLowerCase()));
+    if (missing.length === 0) return;
+    for (const {n,i} of missing) {
+      const slug = n.toLowerCase().replace(/[^a-z0-9-]/g,'') + '-' + i;
+      const res = await new SupabaseQuery(sb, 'nfl_managers').insert({ name: n, slug, draft_position: i });
+      if (res.error) { app.lastError = 'manager insert failed: ' + JSON.stringify(res.error).slice(0,200); break; }
+    }
+    const up = await new SupabaseQuery(sb, 'nfl_draft_state').upsert({ id: 1, draft_started: true, draft_complete: false, updated_at: new Date().toISOString() });
+    if (up.error) app.lastError = 'draft_state upsert failed: ' + JSON.stringify(up.error).slice(0,200);
+    await loadAll();
+  } catch(e) {
+    app.lastError = 'ensureRoster: ' + String(e && e.message || e).slice(0,200);
+  }
+}
+
+async function loadAll() {
+  try {
+    const r1 = await new SupabaseQuery(sb, 'nfl_managers').select().order('draft_position',{ascending:true}).execute();
+    const r2 = await new SupabaseQuery(sb, 'nfl_picks').select().order('pick_number',{ascending:true}).execute();
+    if (Array.isArray(r2.data)) {
+      // Tolerate racing clients: one pick per slot and per team (earliest row wins)
+      const seenNum = new Set(), seenTeam = new Set(), clean = [];
+      [...r2.data].sort((a,b) => (a.pick_number - b.pick_number) || (a.id - b.id)).forEach(p => {
+        if (seenNum.has(p.pick_number) || seenTeam.has(p.team_id)) return;
+        seenNum.add(p.pick_number); seenTeam.add(p.team_id); clean.push(p);
+      });
+      app.picks = clean;
+    }
+    if (Array.isArray(r1.data)) {
+      app.rawManagers = r1.data;
+      app.managers = normalizeManagers(r1.data, app.picks);
+      const keptIds = new Set(app.managers.map(m => m.id));
+      app.picks = app.picks.filter(p => keptIds.has(p.manager_id));
+    } else if (r1.error) {
+      app.lastError = 'managers load failed: ' + JSON.stringify(r1.error).slice(0,200);
+    }
+
+    // If my manager row was a duplicate that got collapsed, re-find myself
+    if (app.myManagerId && !app.managers.some(m => m.id === app.myManagerId)) {
+      const me = app.managers.find(m => m.slug === app.mySlug || m.name === app.myName);
+      if (me) { app.myManagerId = me.id; app.mySlug = me.slug; }
+    }
+
+    const r3 = await new SupabaseQuery(sb, 'nfl_draft_state').select().execute();
+    if (Array.isArray(r3.data) && r3.data[0]) app.draftState = r3.data[0];
+
+    const r4 = await new SupabaseQuery(sb, 'nfl_team_scores').select().execute();
+    if (Array.isArray(r4.data)) r4.data.forEach(s => app.scores[s.team_id] = s);
+
+    setSync('live');
+  } catch(e) {
+    app.lastError = String(e && e.message || e).slice(0,300);
+    setSync('error');
+  }
+}
+
+function setSync(state) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if (state === 'live') { dot.className='sync-dot live'; lbl.style.color=''; lbl.textContent='Live'; }
+  else if (state === 'connecting') { dot.className='sync-dot'; lbl.style.color=''; lbl.textContent='Connecting...'; }
+  else { dot.className='sync-dot'; lbl.style.color='var(--red)'; lbl.textContent='Offline'; }
+}
+
+// ── SCREENS ────────────────────────────────────────────────────────────────
+function renderManagerPicker() {
+  const el = document.getElementById('mgrBtns');
+  if (!el) return;
+  if (app.managers.length === 0) {
+    // Draft not bootstrapped yet — show the fixed roster; first tap sets everything up
+    el.innerHTML = DEFAULT_MGRS.map((n,i) => `
+      <button class="mgr-btn" onclick="bootstrapAndEnter(${i})">
+        <span style="font-size:20px">👤</span>
+        <span>${n}</span>
+      </button>`).join('');
+    return;
+  }
+  el.innerHTML = app.managers.map(m => `
+    <button class="mgr-btn" onclick="enterAs(${m.id})">
+      <span style="font-size:20px">👤</span>
+      <span>
+        <span>${m.name}</span>
+        <span class="draft-pos">Pick #${m.draft_position+1}</span>
+      </span>
+    </button>`).join('');
+}
+
+let bootstrapping = false;
+async function bootstrapAndEnter(idx) {
+  if (bootstrapping) return;
+  bootstrapping = true;
+  rosterHealAttempted = false;
+  await ensureRoster();
+  bootstrapping = false;
+  const name = DEFAULT_MGRS[idx];
+  const mgr = app.managers.find(m => m.name.toLowerCase() === name.toLowerCase());
+  if (mgr) { enterAs(mgr.id); return; }
+  alert('Could not set up the league.\n\n' + (app.lastError ? 'Error: ' + app.lastError : 'Check your connection and try again.'));
+}
+
+function enterAs(mgrId) {
+  app.isCommish = false;
+  const mgr = app.managers.find(m => m.id === mgrId);
+  app.myManagerId = mgrId;
+  app.mySlug = mgr?.slug;
+  app.myName = mgr?.name;
+  // Update URL without reload
+  const newUrl = window.location.pathname + '?m=' + (mgr?.slug || mgrId);
+  window.history.replaceState({}, '', newUrl);
+  document.getElementById('screen-pick')?.classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  document.getElementById('tabSetupBtn').style.display = 'none';
+  const share = document.getElementById('shareLink');
+  if (share) share.textContent = window.location.origin + window.location.pathname;
+  renderAll();
+}
+
+function renderAll() {
+  renderClock();
+  renderTeams();
+  renderBoard();
+  renderLeaderboard();
+  renderSchedule();
+  renderTeamsTable();
+  renderSetupManagers();
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('#screen-app .view.main').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn && btn.classList.add('active');
+  if (name==='draft') { renderClock(); renderTeams(); }
+  if (name==='leaderboard') renderLeaderboard();
+  if (name==='teams') renderTeamsTable();
+  if (name==='board') renderBoard();
+  if (name==='schedule') { renderSchedule(); requestAnimationFrame(scrollScheduleToToday); }
+}
+
+// Jump the schedule to the current week so nobody has to scroll past played games.
+function scrollScheduleToToday() {
+  const t = document.getElementById('sch-today');
+  if (!t) return;
+  t.scrollIntoView({ block: 'start' });
+  window.scrollBy(0, -90);   // clear the sticky header + tab bar
+}
+
+// ── DRAFT CLOCK ────────────────────────────────────────────────────────────
+function renderClock() {
+  if (!document.getElementById('clockBanner')) return;
+  const pickIdx = app.picks.length;
+  const isDone = pickIdx >= TOTAL_PICKS || app.draftState.draft_complete;
+
+  document.getElementById('draftDone').style.display = isDone ? '' : 'none';
+  document.getElementById('teamPickerWrap').style.display = isDone ? 'none' : '';
+  document.getElementById('clockBanner').style.display = isDone ? 'none' : '';
+
+  if (!isDone && app.managers.length > 0) {
+    const managerPos = PICK_ORDER[pickIdx];
+    const onClockMgr = app.managers.find(m => m.draft_position === managerPos);
+    const isMe = onClockMgr && onClockMgr.id === app.myManagerId;
+    const name = onClockMgr?.name || '—';
+
+    document.getElementById('clockName').textContent = isMe ? `🟡 Your Pick, ${name}!` : `${name} is picking...`;
+    const info = autoPickInfo();
+    let clockNote = '';
+    if (info && info.isAutoMgr) clockNote = ' · 🤖 auto-pick';
+    else if (info && info.deadline) {
+      const dl = new Date(info.deadline);
+      clockNote = ` · ⏱ auto at ${String(dl.getHours()).padStart(2,'0')}:${String(dl.getMinutes()).padStart(2,'0')}`;
+    }
+    document.getElementById('clockSub').textContent = `Pick #${pickIdx+1} of ${TOTAL_PICKS} · Round ${Math.floor(pickIdx/MGR_COUNT)+1}${clockNote}`;
+
+    const banner = document.getElementById('clockBanner');
+    const tag = document.getElementById('clockTag');
+    if (isMe) {
+      banner.className = 'clock-banner yours';
+      tag.className = 'clock-tag yours-tag'; tag.textContent = "YOUR PICK";
+    } else {
+      banner.className = 'clock-banner waiting';
+      tag.className = 'clock-tag wait-tag'; tag.textContent = "WAITING";
+    }
+
+    // Show/hide team picker based on whether it's my turn
+    const canPick = isMe || app.myManagerId === null;
+    document.getElementById('teamPickerWrap').style.opacity = canPick ? '1' : '0.4';
+    document.getElementById('teamPickerWrap').style.pointerEvents = canPick ? '' : 'none';
+  }
+}
+
+// ── TEAM GRID ──────────────────────────────────────────────────────────────
+const DIVISIONS = ['AFC East','AFC North','AFC South','AFC West','NFC East','NFC North','NFC South','NFC West'];
+function renderGroupFilters() {
+  const el = document.getElementById('gfilters');
+  if (!el) return;
+  el.innerHTML = ['ALL',...DIVISIONS].map(g => `
+    <button class="gf ${app.activeGroup===g?'on':''}" onclick="setGroup('${g}')">${g==='ALL'?'All':g.replace(' ','&nbsp;')}</button>
+  `).join('');
+}
+
+function setGroup(g) { app.activeGroup = g; renderGroupFilters(); renderTeams(); }
+
+function renderTeams() {
+  if (!document.getElementById('teamGrid')) return;
+  renderGroupFilters();
+  const q = (document.getElementById('teamSearch')?.value||'').toLowerCase();
+  const taken = new Set(app.picks.map(p => p.team_id));
+  const el = document.getElementById('teamGrid');
+  if (!el) return;
+
+  const list = TEAMS.filter(t =>
+    (app.activeGroup==='ALL' || t.div===app.activeGroup) &&
+    (!q || t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q))
+  );
+
+  // Division sections, teams sorted by power rank within each division
+  const divs = [...new Set(list.map(t => t.div))].sort();
+  el.innerHTML = divs.map(g => {
+    const gTeams = list.filter(t => t.div===g).sort((a,b) => a.rank-b.rank);
+    return `<div class="grp-head">${g}</div>` + gTeams.map(t => `
+    <div class="tcard ${taken.has(t.id)?'taken':''}" onpointerup="${taken.has(t.id)?'':'openModal(\''+t.id+'\')'}">
+      <span class="tflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy"/></span>
+      <div><div class="tname">${t.name}</div><div class="tgrp">Rank #${t.rank}</div></div>
+    </div>`).join('');
+  }).join('');
+}
+
+// ── PICK MODAL ─────────────────────────────────────────────────────────────
+function openModal(teamId) {
+  const t = TEAM_MAP[teamId];
+  app.pendingTeamId = teamId;
+  document.getElementById('modalFlag').innerHTML = `<img src="${logoUrl(t.id)}" alt=""/>`;
+  document.getElementById('modalName').textContent = t.name;
+  const pickIdx = app.picks.length;
+  const managerPos = PICK_ORDER[pickIdx];
+  const onClockMgr = app.managers.find(m => m.draft_position === managerPos);
+  document.getElementById('modalSub').textContent = `Drafting for ${onClockMgr?.name||'?'} · Pick #${pickIdx+1}`;
+  document.getElementById('modal').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modal').style.display='none'; app.pendingTeamId=null; }
+
+async function confirmPick() {
+  const teamId = app.pendingTeamId;
+  if (!teamId) return;
+  closeModal();
+
+  const pickIdx = app.picks.length;
+  if (pickIdx >= TOTAL_PICKS) return;
+  const managerPos = PICK_ORDER[pickIdx];
+  const onClockMgr = app.managers.find(m => m.draft_position === managerPos);
+  if (!onClockMgr) return;
+
+  // Check not already taken
+  if (app.picks.some(p => p.team_id === teamId)) return;
+
+  const q = new SupabaseQuery(sb, 'nfl_picks');
+  await q.insert({ manager_id: onClockMgr.id, team_id: teamId, pick_number: pickIdx+1 });
+
+  // Update draft state
+  const nextPick = pickIdx + 2;
+  const isDone = nextPick > TOTAL_PICKS;
+  const qd = new SupabaseQuery(sb, 'nfl_draft_state');
+  qd._filters = ['id=eq.1'];
+  await qd.update({ current_pick: nextPick, draft_complete: isDone, updated_at: new Date().toISOString() });
+
+  await loadAll();
+  renderAll();
+}
+
+// ── DRAFT BOARD ────────────────────────────────────────────────────────────
+function renderBoard() {
+  const el = document.getElementById('boardGrid');
+  if (!el) return;
+  const pickIdx = app.picks.length;
+  const currentPos = pickIdx < TOTAL_PICKS ? PICK_ORDER[pickIdx] : -1;
+
+  el.innerHTML = app.managers.map(m => {
+    const myPicks = app.picks.filter(p => p.manager_id === m.id);
+    const isOnClock = m.draft_position === currentPos;
+    const isMe = m.id === app.myManagerId;
+    const cls = isOnClock ? 'brow onclock' : isMe ? 'brow me' : 'brow';
+    return `<div class="${cls}">
+      <div class="brow-top">
+        <span class="brow-name">${m.name}${isOnClock?' ⏰':''}</span>
+        <span class="brow-count">${myPicks.length} picks</span>
+      </div>
+      <div class="chips">
+        ${myPicks.map(p => {
+          const t = TEAM_MAP[p.team_id];
+          return t ? `<span class="chip"><img src="${logoUrl(t.id)}" alt=""/> ${t.name}</span>` : '';
+        }).join('')}
+        ${myPicks.length===0?'<span style="font-size:11px;color:var(--muted)">No picks yet</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LEADERBOARD ────────────────────────────────────────────────────────────
+function getTeamPts(teamId) { return app.scores[teamId]?.points || 0; }
+
+function teamGameCount(teamId) {
+  return app.matches.filter(m => m.h===teamId || m.a===teamId).length;
+}
+
+// Projected points from a team's REMAINING games: the expPoints model scaled
+// by how many of its games are still unplayed, so projections shrink to
+// zero as results come in and TOTAL converges to actual.
+function getTeamProj(teamId) {
+  const t = TEAM_MAP[teamId];
+  if (!t) return 0;
+  const s = app.scores[teamId];
+  const played = s ? (s.wins||0) + (s.losses||0) + (s.ties||0) : 0;
+  const totalGames = teamGameCount(teamId) || 17;
+  const remaining = Math.max(0, totalGames - played);
+  return expPoints(t) * remaining / totalGames;
+}
+
+function setLbSort(key) {
+  app.lbSort = key;
+  localStorage.setItem('nfl_lbsort', key);
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('lbList');
+  if (!el) return;
+  const chips = document.getElementById('lbSortChips');
+  if (chips) chips.innerHTML = [['pts','PTS'],['proj','PROJ'],['total','TOTAL']].map(([k,l]) =>
+    `<button class="gf ${app.lbSort===k?'on':''}" onclick="setLbSort('${k}')">${l}</button>`).join('');
+
+  const rows = app.managers.map(m => {
+    const myPicks = app.picks.filter(p => p.manager_id === m.id);
+    const pts = myPicks.reduce((s,p) => s + getTeamPts(p.team_id), 0);
+    const proj = myPicks.reduce((s,p) => s + getTeamProj(p.team_id), 0);
+    const teams = myPicks.map(p => TEAM_MAP[p.team_id]).filter(Boolean);
+    return { ...m, pts, proj, total: pts + proj, teams };
+  }).sort((a,b) => (b[app.lbSort] - a[app.lbSort]) || (b.total - a.total) || (b.pts - a.pts));
+
+  const rc = (i) => i===0?'r1':i===1?'r2':i===2?'r3':'';
+  const rn = (i) => ['1st','2nd','3rd'][i] || `${i+1}th`;
+
+  el.innerHTML = rows.map((m,i) => `
+    <div class="lb-row">
+      <div class="lb-rank ${rc(i)}">${rn(i)}</div>
+      <div class="lb-info">
+        <div class="lb-name">${m.name}${m.id===app.myManagerId?' 👤':''}</div>
+        <div class="lb-teams">${m.teams.map(t=>t.id).join(' · ')||'No picks yet'}</div>
+      </div>
+      <div class="lb-stats">
+        <div><div class="lb-num">${m.pts}</div><div class="lb-ptsl${app.lbSort==='pts'?' on':''}">PTS</div></div>
+        <div><div class="lb-num lb-proj">+${m.proj.toFixed(1)}</div><div class="lb-ptsl${app.lbSort==='proj'?' on':''}">PROJ</div></div>
+        <div><div class="lb-num lb-tot">${m.total.toFixed(1)}</div><div class="lb-ptsl${app.lbSort==='total'?' on':''}">TOTAL</div></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── SCHEDULE ───────────────────────────────────────────────────────────────
+// Expected points a team takes from one specific game vs `opp`: a logistic
+// win probability from the rank gap (same shape as the season projection,
+// but for a single matchup), plus a small allowance for a tie.
+function matchExpPoints(team, opp) {
+  if (!team || !opp) return null;
+  const diff = opp.rank - team.rank;
+  const pTie = 0.02;
+  const pWin = (1 - pTie) / (1 + Math.pow(10, -diff / 40));
+  return PTS.win * pWin + PTS.tie * pTie;
+}
+// Actual points a team earned from a finished game given its score vs opponent.
+function matchActualPoints(myScore, oppScore) {
+  if (myScore == null || oppScore == null) return null;
+  return myScore > oppScore ? PTS.win : myScore === oppScore ? PTS.tie : 0;
+}
+
+async function loadMatches() {
+  try {
+    const res = await fetch('matches.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && Array.isArray(data.matches)) app.matches = data.matches;
+  } catch(_) {}
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schList');
+  if (!el) return;
+  if (!app.matches.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:14px 0">Schedule appears after the next data sync (within ~15 minutes).</div>';
+    return;
+  }
+  const pickMap = new Map(app.picks.map(p => [p.team_id, p.manager_id]));
+  const ownerOf = id => {
+    const mid = pickMap.get(id);
+    return mid ? (app.managers.find(m => m.id === mid)?.name || '') : '';
+  };
+  const byWeek = new Map();
+  [...app.matches].sort((a,b) => new Date(a.d) - new Date(b.d)).forEach(m => {
+    const label = 'Week ' + (m.w != null ? m.w : '?');
+    if (!byWeek.has(label)) byWeek.set(label, []);
+    byWeek.get(label).push(m);
+  });
+  // Anchor the first week that is today or later, so we can jump there
+  const entries = [...byWeek.entries()];
+  const todayMid = new Date(); todayMid.setHours(0,0,0,0);
+  let anchorLabel = null;
+  for (const [label, ms] of entries) {
+    const dd = new Date(ms[0].d); dd.setHours(0,0,0,0);
+    if (dd.getTime() >= todayMid.getTime()) { anchorLabel = label; break; }
+  }
+  if (!anchorLabel && entries.length) anchorLabel = entries[entries.length-1][0];
+  el.innerHTML = entries.map(([label, ms]) => `
+    <div class="sch-day"${label===anchorLabel?' id="sch-today"':''}>${label}</div>
+    ${ms.map(m => {
+      const h = TEAM_MAP[m.h], a = TEAM_MAP[m.a];
+      const live = m.s === 'IN_PLAY' || m.s === 'PAUSED';
+      const done = m.s === 'FINISHED';
+      const score = (m.hs != null && m.as != null) ? `${m.hs}–${m.as}` : 'vs';
+      const when = live ? 'LIVE' : done ? 'FT' : new Date(m.d).toLocaleDateString([], {weekday:'short'}) + ' ' + new Date(m.d).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+      const hPts = done ? matchActualPoints(m.hs, m.as) : matchExpPoints(h, a);
+      const aPts = done ? matchActualPoints(m.as, m.hs) : matchExpPoints(a, h);
+      const ptHtml = (v) => v == null ? '' :
+        (done ? `<b class="sch-pt act">${v} pt${v === 1 ? '' : 's'}</b>`
+              : `<b class="sch-pt proj">~${v.toFixed(2)} proj</b>`);
+      const side = (t, raw, id, pts) => `<span class="sch-tname">${t ? `<img src="${logoUrl(t.id)}" alt=""/> ${t.id}` : raw}</span>${ownerOf(id) ? `<i>${ownerOf(id)}</i>` : ''}${ptHtml(pts)}`;
+      return `<div class="sch-row${live ? ' live' : ''}">
+        <span class="sch-when${live ? ' lv' : ''}">${when}</span>
+        <span class="sch-team th">${side(h, m.h, m.h, hPts)}</span>
+        <span class="sch-score">${score}</span>
+        <span class="sch-team ta">${side(a, m.a, m.a, aPts)}</span>
+      </div>`;
+    }).join('')}
+  `).join('');
+}
+
+// ── TEAMS TABLE ────────────────────────────────────────────────────────────
+function renderTeamsTable() {
+  const el = document.getElementById('groupsGrid');
+  if (!el) return;
+  const pickMap = new Map(app.picks.map(p => [p.team_id, p.manager_id]));
+
+  el.innerHTML = DIVISIONS.map(g => {
+    // Live division standings: sort by points, then wins, then power rank
+    const rows = TEAMS.filter(t => t.div===g)
+      .map(t => ({t, s: app.scores[t.id] || {wins:0,losses:0,ties:0,points:0}}))
+      .sort((a,b) => (b.s.points-a.s.points) || (b.s.wins-a.s.wins) || (a.t.rank-b.t.rank));
+
+    return `<div class="gcard">
+      <div class="gcard-head"><span>${g}</span><span class="gcard-cols">W-L-T · PTS</span></div>
+      ${rows.map(({t,s},i) => {
+        const mid = pickMap.get(t.id);
+        const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'') : '';
+        return `<div class="gcard-row">
+          <span class="gpos">${i+1}</span>
+          <span class="gflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy"/></span>
+          <span class="gteam">${t.name}${owner?`<span class="gowner">${owner}</span>`:''}</span>
+          <span class="gwdl">${s.wins}-${s.losses}-${s.ties}</span>
+          <span class="gpts">${s.points}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ── SETUP ──────────────────────────────────────────────────────────────────
+function renderSetupManagers() {
+  const el = document.getElementById('mgrInputs');
+  if (!el) return;
+  // Mirror the saved draft order unless the commissioner is mid-shuffle
+  if (app.managers.length > 0 && !app.mgrsDirty) {
+    app.localMgrs = app.managers.map(m => m.name);
+  }
+  el.innerHTML = app.localMgrs.map((n,i) => `
+    <div class="mgr-row">
+      <span class="pos-badge">${i+1}</span>
+      <span style="font-weight:600;font-size:14px">${n}</span>
+    </div>`).join('');
+
+  const dbg = document.getElementById('debugBox');
+  if (dbg) {
+    const pickIdx = app.picks.length;
+    const onClock = pickIdx < TOTAL_PICKS ? app.managers.find(m => m.draft_position === PICK_ORDER[pickIdx]) : null;
+    dbg.innerHTML =
+      `App ${APP_VERSION} · DB manager rows: ${app.rawManagers.length} → active: ${app.managers.length}` +
+      `<br>Roster: ${app.managers.map(m => (m.draft_position+1)+'.'+m.name).join(' ')||'(empty)'}` +
+      `<br>Picks: ${pickIdx}/${TOTAL_PICKS} · On clock: ${onClock ? onClock.name : (pickIdx>=TOTAL_PICKS?'done':'—')}` +
+      `<br>Last error: ${app.lastError || 'none'}`;
+  }
+}
+
+function shuffleManagers() {
+  for (let i=app.localMgrs.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [app.localMgrs[i],app.localMgrs[j]]=[app.localMgrs[j],app.localMgrs[i]];
+  }
+  app.mgrsDirty = true;
+  renderSetupManagers();
+}
+
+async function saveManagers() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
+  const names = app.localMgrs.filter(n=>n.trim());
+  if (names.length < 2) { alert('Add at least 2 names.'); return; }
+  if (!confirm(`Save ${names.length} managers and start the draft?\n\n${names.join(', ')}\n\nThis will clear any existing managers.`)) return;
+
+  // Delete all existing picks first (FK constraint), then managers
+  await fetch(`${SUPABASE_URL}/rest/v1/nfl_picks?pick_number=gte.1`, { method:'DELETE', headers: sb.headers() });
+  await fetch(`${SUPABASE_URL}/rest/v1/nfl_managers?id=gte.1`, { method:'DELETE', headers: sb.headers() });
+
+  // Insert managers
+  for (let i=0; i<names.length; i++) {
+    const slug = names[i].toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '-' + i;
+    const q = new SupabaseQuery(sb, 'nfl_managers');
+    await q.insert({ name: names[i], slug, draft_position: i });
+  }
+
+  // Start draft
+  const qd = new SupabaseQuery(sb, 'nfl_draft_state');
+  qd._filters = ['id=eq.1'];
+  await qd.update({ draft_started: true, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
+
+  app.mgrsDirty = false;
+  await loadAll();
+  renderManagerPicker();
+  renderAll();
+  alert('✅ Draft started! Copy the link from Setup and send it to your group.');
+}
+
+// ── LIVE SCORES (ESPN, no API key needed) ─────────────────────────────────
+async function espnFetch(path) {
+  const url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl' + path;
+  try {
+    const res = await fetch(url);
+    if (res.ok) return res.json();
+  } catch(_) {}
+  // ESPN's public API doesn't always send CORS headers to every origin — retry through a proxy
+  const res2 = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(url));
+  if (!res2.ok) throw new Error('ESPN fetch failed: ' + res2.status);
+  return res2.json();
+}
+
+async function syncScores() {
+  try {
+    const data = await espnFetch('/standings');
+    const upserts = [];
+    // Standings entries can be nested under conference/division groups —
+    // walk the whole tree looking for {team, stats[]} shaped entries.
+    (function walk(node) {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+      if (node.team && Array.isArray(node.stats)) {
+        const abbr = (node.team.abbreviation || '').toUpperCase();
+        if (TEAM_MAP[abbr]) {
+          const stat = (name) => node.stats.find(s => s.name === name)?.value ?? 0;
+          const wins = stat('wins'), losses = stat('losses'), ties = stat('ties');
+          upserts.push({ team_id: abbr, wins, losses, ties, points: wins*PTS.win + ties*PTS.tie, updated_at: new Date().toISOString() });
+        }
+      }
+      Object.values(node).forEach(walk);
+    })(data);
+
+    if (upserts.length > 0) {
+      await new SupabaseQuery(sb, 'nfl_team_scores').upsert(upserts);
+    }
+    await loadAll();
+    renderAll();
+    document.getElementById('syncLabel').textContent = 'Synced ' + new Date().toLocaleTimeString();
+  } catch(e) { console.error('Sync failed', e); }
+}
+
+// ── AUTO-DRAFT ─────────────────────────────────────────────────────────────
+// Projected regular-season points for a team, from its real schedule when
+// known (matches.json), else a generic estimate vs an average opponent.
+function expPoints(team) {
+  const games = app.matches.filter(m => m.h === team.id || m.a === team.id);
+  if (games.length) {
+    return games.reduce((s,m) => {
+      const oppId = m.h === team.id ? m.a : m.h;
+      const opp = TEAM_MAP[oppId] || {rank:16.5};
+      return s + matchExpPoints(team, opp);
+    }, 0);
+  }
+  return 17 * matchExpPoints(team, {rank:16.5});
+}
+
+// Pick the best team for a manager right now: the available team whose
+// projected points are closest to what that roster still needs to reach
+// the league average (recomputed from current picks every call).
+function chooseTeamFor(mgr) {
+  const exp = {};
+  TEAMS.forEach(t => exp[t.id] = expPoints(t));
+  const target = TEAMS.reduce((s,t) => s + exp[t.id], 0) / MGR_COUNT;
+  const taken = new Set(app.picks.map(p => p.team_id));
+  const avail = TEAMS.filter(t => !taken.has(t.id));
+  if (avail.length === 0) return null;
+  const mine = app.picks.filter(p => p.manager_id === mgr.id);
+  const total = mine.reduce((s,p) => s + (exp[p.team_id]||0), 0);
+  const picksLeftForMgr = PICK_ORDER.slice(app.picks.length).filter(pos => pos === mgr.draft_position).length || 1;
+  const need = (target - total) / picksLeftForMgr;
+  let best = avail[0], bestDist = Infinity;
+  avail.forEach(t => {
+    const dist = Math.abs(exp[t.id] - need);
+    if (dist < bestDist) { bestDist = dist; best = t; }
+  });
+  return best;
+}
+
+// ── LIVE AUTO-PICK ─────────────────────────────────────────────────────────
+// Geiger is always auto-picked; everyone else gets a 30-minute shot clock
+// measured from the previous pick (draft_state.updated_at). Runs from any
+// open page on the 4s poll; jitter + a pre-insert re-check keep multiple
+// open browsers from double-picking, and loadAll dedupes as a backstop.
+const AUTO_MANAGERS = ['geiger'];
+const PICK_TIMEOUT_MS = 30 * 60 * 1000;
+
+function autoPickInfo() {
+  const pickIdx = app.picks.length;
+  if (pickIdx >= TOTAL_PICKS || app.draftState.draft_complete || app.managers.length !== MGR_COUNT) return null;
+  const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[pickIdx]);
+  if (!mgr) return null;
+  const isAutoMgr = AUTO_MANAGERS.includes(mgr.name.trim().toLowerCase());
+  const last = Date.parse(app.draftState.updated_at || '') || 0;
+  const deadline = last ? last + PICK_TIMEOUT_MS : 0;
+  return { pickIdx, mgr, isAutoMgr, deadline, expired: deadline > 0 && Date.now() > deadline };
+}
+
+let autoPicking = false;
+async function maybeAutoPick() {
+  if (autoPicking) return;
+  const info = autoPickInfo();
+  if (!info || (!info.isAutoMgr && !info.expired)) return;
+  autoPicking = true;
+  try {
+    // jitter so several open pages don't all fire at once
+    await new Promise(r => setTimeout(r, 1000 + Math.random()*4000));
+    await loadAll();
+    if (app.picks.length !== info.pickIdx) return;   // someone picked meanwhile
+    const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[info.pickIdx]);
+    if (!mgr || mgr.id !== info.mgr.id) return;
+    const team = chooseTeamFor(mgr);
+    if (!team) return;
+    const res = await new SupabaseQuery(sb, 'nfl_picks').insert({ manager_id: mgr.id, team_id: team.id, pick_number: info.pickIdx + 1 });
+    if (res.error) { app.lastError = 'auto-pick failed: ' + JSON.stringify(res.error).slice(0,150); return; }
+    const nextPick = info.pickIdx + 2;
+    const qd = new SupabaseQuery(sb, 'nfl_draft_state');
+    qd._filters = ['id=eq.1'];
+    await qd.update({ current_pick: nextPick, draft_complete: nextPick > TOTAL_PICKS, updated_at: new Date().toISOString() });
+    await loadAll();
+    renderAll();
+  } finally {
+    autoPicking = false;
+  }
+}
+
+// Fill ONLY the remaining snake slots. Existing picks are never modified —
+// this function only inserts new pick rows. Each auto pick gives the
+// on-clock manager the available team whose projected points are closest
+// to what that roster still needs to reach the league average.
+async function autoDraftRemaining() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
+  await loadAll();
+  const done = app.picks.length;
+  if (done >= TOTAL_PICKS) { alert('Draft is already complete.'); return; }
+  if (app.managers.length !== MGR_COUNT) { alert('Roster looks incomplete — open the League health box below and send it to the commissioner chat.'); return; }
+  if (!confirm(`⚡ Auto-complete the draft?\n\nThe ${done} picks already made stay exactly as they are.\nThe remaining ${TOTAL_PICKS-done} picks will be filled automatically,\nbalancing projected win totals across all six rosters.`)) return;
+
+  try {
+    for (let idx = done; idx < TOTAL_PICKS; idx++) {
+      const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[idx]);
+      if (!mgr) throw new Error('no manager for slot ' + (idx+1));
+      const best = chooseTeamFor(mgr);
+      if (!best) break;
+      const res = await new SupabaseQuery(sb, 'nfl_picks').insert({ manager_id: mgr.id, team_id: best.id, pick_number: idx + 1 });
+      if (res.error) throw new Error('insert failed at pick ' + (idx+1) + ': ' + JSON.stringify(res.error).slice(0,150));
+      app.picks.push({ manager_id: mgr.id, team_id: best.id, pick_number: idx + 1 });
+    }
+    const qd = new SupabaseQuery(sb, 'nfl_draft_state');
+    qd._filters = ['id=eq.1'];
+    await qd.update({ current_pick: TOTAL_PICKS+1, draft_complete: true, updated_at: new Date().toISOString() });
+    await loadAll();
+    renderAll();
+    alert(`✅ Auto-draft complete — all ${TOTAL_PICKS} teams assigned. Check the Board tab.`);
+  } catch(e) {
+    app.lastError = 'auto-draft: ' + String(e && e.message || e).slice(0,200);
+    await loadAll();
+    renderAll();
+    alert('Auto-draft stopped: ' + (e.message || e) + '\n\nEverything filled so far is saved and nothing was lost — run it again to finish.');
+  }
+}
+
+async function resetAll() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
+  if (!confirm('⚠️ Reset ALL draft data?\n\nThis deletes all picks, wipes every manager row, and rebuilds the six-man roster fresh. This CANNOT be undone.')) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/nfl_picks?pick_number=gte.0`, { method:'DELETE', headers: sb.headers() });
+    await fetch(`${SUPABASE_URL}/rest/v1/nfl_managers?id=gte.0`, { method:'DELETE', headers: sb.headers() });
+    const qd = new SupabaseQuery(sb, 'nfl_draft_state');
+    qd._filters = ['id=eq.1'];
+    await qd.update({ draft_started: false, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
+    app.localMgrs = [...DEFAULT_MGRS];
+    app.picks = [];
+    app.managers = [];
+    // Rebuild the roster right here so there is no race between devices
+    rosterHealAttempted = false;
+    await ensureRoster();
+    renderManagerPicker();
+    renderAll();
+    if (app.managers.length === DEFAULT_MGRS.length) {
+      alert('✅ League rebuilt. All six managers are in, draft order 1-6 as listed. Everyone just reloads and taps their name.');
+    } else {
+      alert('Reset ran but the roster came back incomplete.\n\n' + (app.lastError ? 'Error: ' + app.lastError : 'Try once more.'));
+    }
+  } catch(e) {
+    alert('Reset failed: ' + String(e && e.message || e) + '\nTry again or clear from your Supabase dashboard.');
+  }
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'));
+}
+
+// ── START ──────────────────────────────────────────────────────────────────
+init();
+</script>
+
+<footer>Gridiron Pride · <span id="verTag"></span> · Scores via ESPN</footer>
+<script>document.getElementById('verTag').textContent = APP_VERSION;</script>
+</body>
+</html>
