@@ -445,7 +445,10 @@ const TEAMS = [
   {id:'TEN',name:'Tennessee Titans',   conf:'AFC',div:'AFC South',rank:32},
 ];
 const TEAM_MAP = Object.fromEntries(TEAMS.map(t => [t.id, t]));
-function logoUrl(id) { return `https://a.espn.com/i/teamlogos/nfl/500/${id.toLowerCase()}.png`; }
+// ESPN's "scoreboard" logo variant renders as an angled helmet for NFL
+// teams (their shield/wordmark logo lives at the same path minus
+// /scoreboard/). Falls back to logoFallback() below if a path is ever off.
+function logoUrl(id) { return `https://a.espn.com/i/teamlogos/nfl/500/scoreboard/${id.toLowerCase()}.png`; }
 // If a logo fails to load (offline, ad blocker, CDN hiccup), swap it for a
 // same-sized badge with the team code instead of leaving a broken-image
 // icon — always show *something* recognizable next to each team.
