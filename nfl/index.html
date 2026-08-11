@@ -152,6 +152,7 @@ header{
 .tcard.taken .tname{text-decoration:line-through}
 .tflag{font-size:20px;line-height:1;width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .tflag img{width:22px;height:22px;object-fit:contain}
+.logofallback{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-family:'JetBrains Mono',monospace;font-weight:700;border-radius:3px;line-height:1;flex:none}
 .tname{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tgrp{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
 
@@ -445,6 +446,19 @@ const TEAMS = [
 ];
 const TEAM_MAP = Object.fromEntries(TEAMS.map(t => [t.id, t]));
 function logoUrl(id) { return `https://a.espn.com/i/teamlogos/nfl/500/${id.toLowerCase()}.png`; }
+// If a logo fails to load (offline, ad blocker, CDN hiccup), swap it for a
+// same-sized badge with the team code instead of leaving a broken-image
+// icon — always show *something* recognizable next to each team.
+function logoFallback(img, teamId) {
+  const w = img.offsetWidth || 20, h = img.offsetHeight || 20;
+  const span = document.createElement('span');
+  span.className = 'logofallback';
+  span.textContent = teamId;
+  span.style.width = w + 'px';
+  span.style.height = h + 'px';
+  span.style.fontSize = Math.max(6, Math.round(w*0.32)) + 'px';
+  img.replaceWith(span);
+}
 
 const MGR_COUNT = 6;
 const DEFAULT_MGRS = ['Kochtanek','Geiger','Hoskins','Weagley','Malaney','Hogan'];
@@ -573,6 +587,17 @@ const PTS = {win:1,tie:0.5};
   <!-- SETUP TAB -->
   <div id="tab-setup" class="view main">
     <div class="setup-grid">
+      <div class="card">
+        <div class="card-title">⏱ Draft Clock</div>
+        <div class="alert alert-info" style="font-size:12px">
+          The clock — Geiger's auto-pick and everyone else's 30-minute shot clock — only runs while it's <b>started</b>. Saving/restarting the roster or resetting the league always leaves it paused, so nothing auto-picks for anyone until you deliberately start it here.
+        </div>
+        <div id="clockStatus" style="font-size:13px;font-weight:600;margin-bottom:10px">—</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold btn-sm" id="btnStartClock" onclick="startClock()">▶ Start the Draft Clock</button>
+          <button class="btn btn-out btn-sm" id="btnPauseClock" onclick="pauseClock()">⏸ Pause Clock</button>
+        </div>
+      </div>
       <div class="card">
         <div class="card-title">👥 Managers</div>
         <div class="alert alert-info" style="font-size:12px">
@@ -766,7 +791,10 @@ async function ensureRoster() {
       const res = await new SupabaseQuery(sb, 'nfl_managers').insert({ name: n, slug, draft_position: i });
       if (res.error) { app.lastError = 'manager insert failed: ' + JSON.stringify(res.error).slice(0,200); break; }
     }
-    const up = await new SupabaseQuery(sb, 'nfl_draft_state').upsert({ id: 1, draft_started: true, draft_complete: false, updated_at: new Date().toISOString() });
+    // Note: draft_started is deliberately omitted here so healing the roster
+    // never re-enables a clock the commissioner paused — it only matters for
+    // the very first insert, where it defaults to false (paused) anyway.
+    const up = await new SupabaseQuery(sb, 'nfl_draft_state').upsert({ id: 1, draft_complete: false, updated_at: new Date().toISOString() });
     if (up.error) app.lastError = 'draft_state upsert failed: ' + JSON.stringify(up.error).slice(0,200);
     await loadAll();
   } catch(e) {
@@ -924,18 +952,25 @@ function renderClock() {
     const name = onClockMgr?.name || '—';
 
     document.getElementById('clockName').textContent = isMe ? `🟡 Your Pick, ${name}!` : `${name} is picking...`;
-    const info = autoPickInfo();
     let clockNote = '';
-    if (info && info.isAutoMgr) clockNote = ' · 🤖 auto-pick';
-    else if (info && info.deadline) {
-      const dl = new Date(info.deadline);
-      clockNote = ` · ⏱ auto at ${String(dl.getHours()).padStart(2,'0')}:${String(dl.getMinutes()).padStart(2,'0')}`;
+    if (!app.draftState.draft_started) {
+      clockNote = ' · ⏸ clock not started — manual picks only';
+    } else {
+      const info = autoPickInfo();
+      if (info && info.isAutoMgr) clockNote = ' · 🤖 auto-pick';
+      else if (info && info.deadline) {
+        const dl = new Date(info.deadline);
+        clockNote = ` · ⏱ auto at ${String(dl.getHours()).padStart(2,'0')}:${String(dl.getMinutes()).padStart(2,'0')}`;
+      }
     }
     document.getElementById('clockSub').textContent = `Pick #${pickIdx+1} of ${TOTAL_PICKS} · Round ${Math.floor(pickIdx/MGR_COUNT)+1}${clockNote}`;
 
     const banner = document.getElementById('clockBanner');
     const tag = document.getElementById('clockTag');
-    if (isMe) {
+    if (!app.draftState.draft_started) {
+      banner.className = 'clock-banner waiting';
+      tag.className = 'clock-tag wait-tag'; tag.textContent = "PAUSED";
+    } else if (isMe) {
       banner.className = 'clock-banner yours';
       tag.className = 'clock-tag yours-tag'; tag.textContent = "YOUR PICK";
     } else {
@@ -981,7 +1016,7 @@ function renderTeams() {
     const gTeams = list.filter(t => t.div===g).sort((a,b) => a.rank-b.rank);
     return `<div class="grp-head">${g}</div>` + gTeams.map(t => `
     <div class="tcard ${taken.has(t.id)?'taken':''}" onpointerup="${taken.has(t.id)?'':'openModal(\''+t.id+'\')'}">
-      <span class="tflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy"/></span>
+      <span class="tflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy" onerror="logoFallback(this,'${t.id}')"/></span>
       <div><div class="tname">${t.name}</div><div class="tgrp">Rank #${t.rank}</div></div>
     </div>`).join('');
   }).join('');
@@ -991,7 +1026,7 @@ function renderTeams() {
 function openModal(teamId) {
   const t = TEAM_MAP[teamId];
   app.pendingTeamId = teamId;
-  document.getElementById('modalFlag').innerHTML = `<img src="${logoUrl(t.id)}" alt=""/>`;
+  document.getElementById('modalFlag').innerHTML = `<img src="${logoUrl(t.id)}" alt="" onerror="logoFallback(this,'${t.id}')"/>`;
   document.getElementById('modalName').textContent = t.name;
   const pickIdx = app.picks.length;
   const managerPos = PICK_ORDER[pickIdx];
@@ -1049,7 +1084,7 @@ function renderBoard() {
       <div class="chips">
         ${myPicks.map(p => {
           const t = TEAM_MAP[p.team_id];
-          return t ? `<span class="chip"><img src="${logoUrl(t.id)}" alt=""/> ${t.name}</span>` : '';
+          return t ? `<span class="chip"><img src="${logoUrl(t.id)}" alt="" onerror="logoFallback(this,'${t.id}')"/> ${t.name}</span>` : '';
         }).join('')}
         ${myPicks.length===0?'<span style="font-size:11px;color:var(--muted)">No picks yet</span>':''}
       </div>
@@ -1182,7 +1217,7 @@ function renderSchedule() {
       const ptHtml = (v) => v == null ? '' :
         (done ? `<b class="sch-pt act">${v} pt${v === 1 ? '' : 's'}</b>`
               : `<b class="sch-pt proj">~${v.toFixed(2)} proj</b>`);
-      const side = (t, raw, id, pts) => `<span class="sch-tname">${t ? `<img src="${logoUrl(t.id)}" alt=""/> ${t.id}` : raw}</span>${ownerOf(id) ? `<i>${ownerOf(id)}</i>` : ''}${ptHtml(pts)}`;
+      const side = (t, raw, id, pts) => `<span class="sch-tname">${t ? `<img src="${logoUrl(t.id)}" alt="" onerror="logoFallback(this,'${t.id}')"/> ${t.id}` : raw}</span>${ownerOf(id) ? `<i>${ownerOf(id)}</i>` : ''}${ptHtml(pts)}`;
       return `<div class="sch-row${live ? ' live' : ''}">
         <span class="sch-when${live ? ' lv' : ''}">${when}</span>
         <span class="sch-team th">${side(h, m.h, m.h, hPts)}</span>
@@ -1212,7 +1247,7 @@ function renderTeamsTable() {
         const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'') : '';
         return `<div class="gcard-row">
           <span class="gpos">${i+1}</span>
-          <span class="gflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy"/></span>
+          <span class="gflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy" onerror="logoFallback(this,'${t.id}')"/></span>
           <span class="gteam">${t.name}${owner?`<span class="gowner">${owner}</span>`:''}</span>
           <span class="gwdl">${s.wins}-${s.losses}-${s.ties}</span>
           <span class="gpts">${s.points}</span>
@@ -1244,8 +1279,44 @@ function renderSetupManagers() {
       `App ${APP_VERSION} · DB manager rows: ${app.rawManagers.length} → active: ${app.managers.length}` +
       `<br>Roster: ${app.managers.map(m => (m.draft_position+1)+'.'+m.name).join(' ')||'(empty)'}` +
       `<br>Picks: ${pickIdx}/${TOTAL_PICKS} · On clock: ${onClock ? onClock.name : (pickIdx>=TOTAL_PICKS?'done':'—')}` +
+      `<br>Draft clock: ${app.draftState.draft_started ? 'started' : 'paused'}` +
       `<br>Last error: ${app.lastError || 'none'}`;
   }
+
+  const status = document.getElementById('clockStatus');
+  const startBtn = document.getElementById('btnStartClock');
+  const pauseBtn = document.getElementById('btnPauseClock');
+  if (status && startBtn && pauseBtn) {
+    const started = !!app.draftState.draft_started;
+    status.textContent = started ? '🟢 Clock is running — Geiger auto-picks and the 30-min shot clock are live' : '⏸ Clock is paused — only manual picks count, nobody gets auto-picked for';
+    status.style.color = started ? '#218a52' : 'var(--muted)';
+    startBtn.style.display = started ? 'none' : '';
+    pauseBtn.style.display = started ? '' : 'none';
+  }
+}
+
+// Commissioner-only gate on the automatic side of the draft (Geiger's
+// instant auto-pick + the 30-minute shot clock timeout). Manual picking
+// via the team grid always works regardless of this flag — it only
+// controls whether the background timer in maybeAutoPick() is allowed to
+// insert picks on someone's behalf.
+async function startClock() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
+  if (!confirm('▶ Start the draft clock?\n\nFrom now on, Geiger auto-picks instantly on their turn and everyone else gets a 30-minute shot clock before an auto-pick fires for them.')) return;
+  const qd = new SupabaseQuery(sb, 'nfl_draft_state');
+  qd._filters = ['id=eq.1'];
+  await qd.update({ draft_started: true, updated_at: new Date().toISOString() });
+  await loadAll();
+  renderAll();
+}
+
+async function pauseClock() {
+  if (!app.isCommish) { alert('Commissioner only.'); return; }
+  const qd = new SupabaseQuery(sb, 'nfl_draft_state');
+  qd._filters = ['id=eq.1'];
+  await qd.update({ draft_started: false, updated_at: new Date().toISOString() });
+  await loadAll();
+  renderAll();
 }
 
 function shuffleManagers() {
@@ -1261,7 +1332,7 @@ async function saveManagers() {
   if (!app.isCommish) { alert('Commissioner only.'); return; }
   const names = app.localMgrs.filter(n=>n.trim());
   if (names.length < 2) { alert('Add at least 2 names.'); return; }
-  if (!confirm(`Save ${names.length} managers and start the draft?\n\n${names.join(', ')}\n\nThis will clear any existing managers.`)) return;
+  if (!confirm(`Save ${names.length} managers and restart the draft?\n\n${names.join(', ')}\n\nThis will clear any existing managers. The draft clock stays paused — hit "Start the Draft Clock" when everyone's ready.`)) return;
 
   // Delete all existing picks first (FK constraint), then managers
   await fetch(`${SUPABASE_URL}/rest/v1/nfl_picks?pick_number=gte.1`, { method:'DELETE', headers: sb.headers() });
@@ -1274,16 +1345,17 @@ async function saveManagers() {
     await q.insert({ name: names[i], slug, draft_position: i });
   }
 
-  // Start draft
+  // Reset draft state — clock stays paused (draft_started:false) until the
+  // commissioner explicitly starts it, so nobody gets auto-picked for.
   const qd = new SupabaseQuery(sb, 'nfl_draft_state');
   qd._filters = ['id=eq.1'];
-  await qd.update({ draft_started: true, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
+  await qd.update({ draft_started: false, draft_complete: false, current_pick: 1, updated_at: new Date().toISOString() });
 
   app.mgrsDirty = false;
   await loadAll();
   renderManagerPicker();
   renderAll();
-  alert('✅ Draft started! Copy the link from Setup and send it to your group.');
+  alert('✅ Roster saved and draft reset to pick #1. Copy the link from Setup and send it to your group. The clock is paused — hit "Start the Draft Clock" here when everyone is ready to go live.');
 }
 
 // ── LIVE SCORES (ESPN, no API key needed) ─────────────────────────────────
@@ -1370,11 +1442,15 @@ function chooseTeamFor(mgr) {
 // measured from the previous pick (draft_state.updated_at). Runs from any
 // open page on the 4s poll; jitter + a pre-insert re-check keep multiple
 // open browsers from double-picking, and loadAll dedupes as a backstop.
+// None of this fires until the commissioner explicitly starts the clock
+// (draft_state.draft_started) — before that, only manual picks count, so
+// setting up a fresh draft never silently auto-picks for anyone.
 const AUTO_MANAGERS = ['geiger'];
 const PICK_TIMEOUT_MS = 30 * 60 * 1000;
 
 function autoPickInfo() {
   const pickIdx = app.picks.length;
+  if (!app.draftState.draft_started) return null;
   if (pickIdx >= TOTAL_PICKS || app.draftState.draft_complete || app.managers.length !== MGR_COUNT) return null;
   const mgr = app.managers.find(m => m.draft_position === PICK_ORDER[pickIdx]);
   if (!mgr) return null;
@@ -1466,7 +1542,7 @@ async function resetAll() {
     renderManagerPicker();
     renderAll();
     if (app.managers.length === DEFAULT_MGRS.length) {
-      alert('✅ League rebuilt. All six managers are in, draft order 1-6 as listed. Everyone just reloads and taps their name.');
+      alert('✅ League rebuilt. All six managers are in, draft order 1-6 as listed, and the clock is paused. Everyone can reload and tap their name — hit "Start the Draft Clock" here when you\'re ready to go live.');
     } else {
       alert('Reset ran but the roster came back incomplete.\n\n' + (app.lastError ? 'Error: ' + app.lastError : 'Try once more.'));
     }
