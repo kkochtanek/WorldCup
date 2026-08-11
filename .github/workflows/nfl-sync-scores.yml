@@ -1,0 +1,28 @@
+name: Sync NFL live scores
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # every 15 minutes
+  workflow_dispatch:          # manual "Run workflow" button
+
+permissions:
+  contents: write             # lets the job commit nfl/matches.json
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch NFL standings/schedule and update Supabase
+        run: node nfl/scripts/sync-scores.mjs
+      - name: Commit updated match schedule
+        run: |
+          if ! git diff --quiet nfl/matches.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add nfl/matches.json
+            git commit -m "Update NFL match schedule data"
+            git push
+          else
+            echo "nfl/matches.json unchanged"
+          fi
