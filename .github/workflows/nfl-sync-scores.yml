@@ -1,8 +1,10 @@
 name: Sync NFL live scores
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'   # every 15 minutes
+  # Cron disabled while the site is inactive (was every 15 min, 24/7 —
+  # each commit triggers a Netlify rebuild). Re-add the schedule to resume.
+  # schedule:
+  #   - cron: '*/15 * * * *'
   workflow_dispatch:          # manual "Run workflow" button
 
 permissions:

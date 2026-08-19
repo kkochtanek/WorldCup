@@ -1,8 +1,10 @@
 name: Sync live scores
 
 on:
-  schedule:
-    - cron: '*/10 * * * *'   # every 10 minutes
+  # Cron disabled while the site is inactive (was every 10 min, 24/7 —
+  # each commit triggers a Netlify rebuild). Re-add the schedule to resume.
+  # schedule:
+  #   - cron: '*/10 * * * *'
   workflow_dispatch:          # manual "Run workflow" button
 
 permissions:
