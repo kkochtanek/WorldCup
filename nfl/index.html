@@ -410,39 +410,46 @@ const sb = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON);
 // used only to balance the snake draft and to project win expectancy before
 // results roll in — it's a rough estimate, not a live rating, and matters
 // less and less as actual game results (via ESPN) come in each week.
+// winTotal = blended 2026 season projected win total, synthesized from
+// multiple reliable sources as of Sept 2026 (sportsbook/Vegas O-U consensus,
+// PFF season-simulation projections, and Kalshi prediction-market pricing).
+// rank is just winTotal's sort order (1=best), kept for display/tiebreaks —
+// all the actual draft-balance and projection math runs on winTotal itself
+// (see matchExpPoints), not on the ordinal. Refresh periodically; these are
+// preseason numbers and will drift as the real season plays out.
 const TEAMS = [
-  {id:'PHI',name:'Philadelphia Eagles',conf:'NFC',div:'NFC East',rank:1},
-  {id:'KC', name:'Kansas City Chiefs', conf:'AFC',div:'AFC West',rank:2},
-  {id:'BAL',name:'Baltimore Ravens',   conf:'AFC',div:'AFC North',rank:3},
-  {id:'BUF',name:'Buffalo Bills',      conf:'AFC',div:'AFC East',rank:4},
-  {id:'DET',name:'Detroit Lions',      conf:'NFC',div:'NFC North',rank:5},
-  {id:'GB', name:'Green Bay Packers',  conf:'NFC',div:'NFC North',rank:6},
-  {id:'DEN',name:'Denver Broncos',     conf:'AFC',div:'AFC West',rank:7},
-  {id:'LAR',name:'Los Angeles Rams',   conf:'NFC',div:'NFC West',rank:8},
-  {id:'SF', name:'San Francisco 49ers',conf:'NFC',div:'NFC West',rank:9},
-  {id:'PIT',name:'Pittsburgh Steelers',conf:'AFC',div:'AFC North',rank:10},
-  {id:'MIN',name:'Minnesota Vikings',  conf:'NFC',div:'NFC North',rank:11},
-  {id:'LAC',name:'Los Angeles Chargers',conf:'AFC',div:'AFC West',rank:12},
-  {id:'HOU',name:'Houston Texans',     conf:'AFC',div:'AFC South',rank:13},
-  {id:'CIN',name:'Cincinnati Bengals', conf:'AFC',div:'AFC North',rank:14},
-  {id:'TB', name:'Tampa Bay Buccaneers',conf:'NFC',div:'NFC South',rank:15},
-  {id:'SEA',name:'Seattle Seahawks',   conf:'NFC',div:'NFC West',rank:16},
-  {id:'WSH',name:'Washington Commanders',conf:'NFC',div:'NFC East',rank:17},
-  {id:'ARI',name:'Arizona Cardinals',  conf:'NFC',div:'NFC West',rank:18},
-  {id:'CHI',name:'Chicago Bears',      conf:'NFC',div:'NFC North',rank:19},
-  {id:'IND',name:'Indianapolis Colts', conf:'AFC',div:'AFC South',rank:20},
-  {id:'ATL',name:'Atlanta Falcons',    conf:'NFC',div:'NFC South',rank:21},
-  {id:'MIA',name:'Miami Dolphins',     conf:'AFC',div:'AFC East',rank:22},
-  {id:'DAL',name:'Dallas Cowboys',     conf:'NFC',div:'NFC East',rank:23},
-  {id:'NO', name:'New Orleans Saints', conf:'NFC',div:'NFC South',rank:24},
-  {id:'NYJ',name:'New York Jets',      conf:'AFC',div:'AFC East',rank:25},
-  {id:'JAX',name:'Jacksonville Jaguars',conf:'AFC',div:'AFC South',rank:26},
-  {id:'NE', name:'New England Patriots',conf:'AFC',div:'AFC East',rank:27},
-  {id:'LV', name:'Las Vegas Raiders',  conf:'AFC',div:'AFC West',rank:28},
-  {id:'CAR',name:'Carolina Panthers',  conf:'NFC',div:'NFC South',rank:29},
-  {id:'CLE',name:'Cleveland Browns',   conf:'AFC',div:'AFC North',rank:30},
-  {id:'NYG',name:'New York Giants',    conf:'NFC',div:'NFC East',rank:31},
-  {id:'TEN',name:'Tennessee Titans',   conf:'AFC',div:'AFC South',rank:32},
+  {id:'LAR',name:'Los Angeles Rams',   conf:'NFC',div:'NFC West', rank:1, winTotal:11.6},
+  {id:'NE', name:'New England Patriots',conf:'AFC',div:'AFC East',rank:2, winTotal:10.7},
+  {id:'BUF',name:'Buffalo Bills',      conf:'AFC',div:'AFC East', rank:3, winTotal:10.5},
+  {id:'SEA',name:'Seattle Seahawks',   conf:'NFC',div:'NFC West', rank:4, winTotal:10.5},
+  {id:'SF', name:'San Francisco 49ers',conf:'NFC',div:'NFC West', rank:5, winTotal:10.5},
+  {id:'DET',name:'Detroit Lions',      conf:'NFC',div:'NFC North',rank:6, winTotal:9.9},
+  {id:'BAL',name:'Baltimore Ravens',   conf:'AFC',div:'AFC North',rank:7, winTotal:9.8},
+  {id:'GB', name:'Green Bay Packers',  conf:'NFC',div:'NFC North',rank:8, winTotal:9.8},
+  {id:'KC', name:'Kansas City Chiefs', conf:'AFC',div:'AFC West', rank:9, winTotal:9.5},
+  {id:'HOU',name:'Houston Texans',     conf:'AFC',div:'AFC South',rank:10,winTotal:9.4},
+  {id:'PHI',name:'Philadelphia Eagles',conf:'NFC',div:'NFC East', rank:11,winTotal:9.4},
+  {id:'DEN',name:'Denver Broncos',     conf:'AFC',div:'AFC West', rank:12,winTotal:9.1},
+  {id:'DAL',name:'Dallas Cowboys',     conf:'NFC',div:'NFC East', rank:13,winTotal:9.0},
+  {id:'CHI',name:'Chicago Bears',      conf:'NFC',div:'NFC North',rank:14,winTotal:8.9},
+  {id:'CIN',name:'Cincinnati Bengals', conf:'AFC',div:'AFC North',rank:15,winTotal:8.5},
+  {id:'JAX',name:'Jacksonville Jaguars',conf:'AFC',div:'AFC South',rank:16,winTotal:8.5},
+  {id:'IND',name:'Indianapolis Colts', conf:'AFC',div:'AFC South',rank:17,winTotal:8.3},
+  {id:'PIT',name:'Pittsburgh Steelers',conf:'AFC',div:'AFC North',rank:18,winTotal:8.3},
+  {id:'TB', name:'Tampa Bay Buccaneers',conf:'NFC',div:'NFC South',rank:19,winTotal:8.3},
+  {id:'LAC',name:'Los Angeles Chargers',conf:'AFC',div:'AFC West',rank:20,winTotal:8.1},
+  {id:'NO', name:'New Orleans Saints', conf:'NFC',div:'NFC South',rank:21,winTotal:7.7},
+  {id:'NYG',name:'New York Giants',    conf:'NFC',div:'NFC East', rank:22,winTotal:7.7},
+  {id:'WSH',name:'Washington Commanders',conf:'NFC',div:'NFC East',rank:23,winTotal:7.6},
+  {id:'ATL',name:'Atlanta Falcons',    conf:'NFC',div:'NFC South',rank:24,winTotal:7.5},
+  {id:'CAR',name:'Carolina Panthers',  conf:'NFC',div:'NFC South',rank:25,winTotal:7.2},
+  {id:'MIN',name:'Minnesota Vikings',  conf:'NFC',div:'NFC North',rank:26,winTotal:7.1},
+  {id:'TEN',name:'Tennessee Titans',   conf:'AFC',div:'AFC South',rank:27,winTotal:6.6},
+  {id:'CLE',name:'Cleveland Browns',   conf:'AFC',div:'AFC North',rank:28,winTotal:6.0},
+  {id:'NYJ',name:'New York Jets',      conf:'AFC',div:'AFC East', rank:29,winTotal:6.0},
+  {id:'LV', name:'Las Vegas Raiders',  conf:'AFC',div:'AFC West', rank:30,winTotal:5.5},
+  {id:'MIA',name:'Miami Dolphins',     conf:'AFC',div:'AFC East', rank:31,winTotal:5.5},
+  {id:'ARI',name:'Arizona Cardinals',  conf:'NFC',div:'NFC West', rank:32,winTotal:4.4},
 ];
 const TEAM_MAP = Object.fromEntries(TEAMS.map(t => [t.id, t]));
 // Self-hosted team logos (icons/logos/*.svg) — no external CDN dependency,
@@ -692,7 +699,7 @@ let app = {
   lastError: null,
   picks: [],           // [{id, manager_id, team_id, pick_number}]
   scores: {},          // teamId -> {wins,losses,ties,points}
-  matches: [],         // [{d,s,h,a,hs,as,w}] from matches.json
+  matches: [],         // [{d,s,h,a,hs,as,w}] from the nfl_matches table
   draftState: { current_pick:1, draft_started:false, draft_complete:false },
   lbSort: localStorage.getItem('nfl_lbsort') || 'pts',
   pendingTeamId: null,
@@ -1020,7 +1027,7 @@ function renderTeams() {
     return `<div class="grp-head">${g}</div>` + gTeams.map(t => `
     <div class="tcard ${taken.has(t.id)?'taken':''}" onpointerup="${taken.has(t.id)?'':'openModal(\''+t.id+'\')'}">
       <span class="tflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy" onerror="logoFallback(this,'${t.id}')"/></span>
-      <div><div class="tname">${t.name}</div><div class="tgrp">Rank #${t.rank}</div></div>
+      <div><div class="tname">${t.name}</div><div class="tgrp">#${t.rank} · ${t.winTotal}W proj</div></div>
     </div>`).join('');
   }).join('');
 }
@@ -1156,13 +1163,17 @@ function renderLeaderboard() {
 
 // ── SCHEDULE ───────────────────────────────────────────────────────────────
 // Expected points a team takes from one specific game vs `opp`: a logistic
-// win probability from the rank gap (same shape as the season projection,
-// but for a single matchup), plus a small allowance for a tie.
+// win probability driven by the gap between their researched season win
+// totals (same shape as the season projection, but for a single matchup),
+// plus a small allowance for a tie. A team's expPoints (summed over its
+// real 17-game schedule) naturally lands close to its own winTotal while
+// still reflecting strength of schedule, since each opponent's winTotal
+// pulls the per-game probability up or down.
 function matchExpPoints(team, opp) {
   if (!team || !opp) return null;
-  const diff = opp.rank - team.rank;
+  const diff = (team.winTotal ?? 8.5) - (opp.winTotal ?? 8.5);
   const pTie = 0.02;
-  const pWin = (1 - pTie) / (1 + Math.pow(10, -diff / 40));
+  const pWin = (1 - pTie) / (1 + Math.pow(10, -diff / 6));
   return PTS.win * pWin + PTS.tie * pTie;
 }
 // Actual points a team earned from a finished game given its score vs opponent.
@@ -1173,10 +1184,14 @@ function matchActualPoints(myScore, oppScore) {
 
 async function loadMatches() {
   try {
-    const res = await fetch('matches.json?t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data && Array.isArray(data.matches)) app.matches = data.matches;
+    const res = await new SupabaseQuery(sb, 'nfl_matches').select().order('game_date',{ascending:true}).execute();
+    if (Array.isArray(res.data)) {
+      app.matches = res.data.map(r => ({
+        d: r.game_date, s: r.status, w: r.week,
+        h: r.home_team, a: r.away_team,
+        hs: r.home_score, as: r.away_score,
+      }));
+    }
   } catch(_) {}
 }
 
@@ -1405,17 +1420,17 @@ async function syncScores() {
 
 // ── AUTO-DRAFT ─────────────────────────────────────────────────────────────
 // Projected regular-season points for a team, from its real schedule when
-// known (matches.json), else a generic estimate vs an average opponent.
+// known (the nfl_matches table), else a generic estimate vs an average opponent.
 function expPoints(team) {
   const games = app.matches.filter(m => m.h === team.id || m.a === team.id);
   if (games.length) {
     return games.reduce((s,m) => {
       const oppId = m.h === team.id ? m.a : m.h;
-      const opp = TEAM_MAP[oppId] || {rank:16.5};
+      const opp = TEAM_MAP[oppId] || {winTotal:8.5};
       return s + matchExpPoints(team, opp);
     }, 0);
   }
-  return 17 * matchExpPoints(team, {rank:16.5});
+  return 17 * matchExpPoints(team, {winTotal:8.5});
 }
 
 // Pick the best team for a manager right now: the available team whose

@@ -1,7 +1,13 @@
 // Fetches live NFL standings and the full regular-season schedule from
-// ESPN's public, unauthenticated site API and upserts them into Supabase +
-// nfl/matches.json. Runs in GitHub Actions on a schedule (see
-// .github/workflows/nfl-sync-scores.yml). No API key required.
+// ESPN's public, unauthenticated site API and upserts them into Supabase
+// (nfl_team_scores + nfl_matches). Runs in GitHub Actions on a schedule
+// (see .github/workflows/nfl-sync-scores.yml). No API key required.
+//
+// This writes ONLY to Supabase — never to a file in the repo — on purpose:
+// an earlier version committed nfl/matches.json on every run, which fired
+// a redeploy every 15 minutes around the clock. Writing to the database
+// instead means the sync job never touches git, so it can run as often as
+// needed without triggering a rebuild.
 //
 // Env:
 //   ESPN_STANDINGS_FIXTURE  - optional path to a local standings JSON (testing)
@@ -9,7 +15,7 @@
 //   NFL_SEASON_YEAR         - optional override for the season year
 //   DRY_RUN                 - optional, print the upserts instead of writing
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 const SUPABASE_URL = 'https://kqwitbmocklwsmjcuxoy.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtxd2l0Ym1vY2tsd3NtamN1eG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjIxNzUsImV4cCI6MjA5NjUzODE3NX0.0CSZvNAy_Av4D4Kl0apgHCiEj2ecW-K1AXtYQUFSJRI';
@@ -31,6 +37,30 @@ async function espnGet(url) {
     process.exit(1);
   }
   return res.json();
+}
+
+async function supabaseUpsert(table, rows) {
+  if (rows.length === 0) return;
+  if (process.env.DRY_RUN) {
+    console.log(`[DRY_RUN] would upsert ${rows.length} rows into ${table}:`);
+    console.log(JSON.stringify(rows, null, 2));
+    return;
+  }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer ' + SUPABASE_ANON,
+      'Prefer': 'return=minimal,resolution=merge-duplicates',
+    },
+    body: JSON.stringify(rows),
+  });
+  if (!res.ok) {
+    console.error(`Supabase upsert into ${table} failed ${res.status}: ${await res.text()}`);
+    process.exit(1);
+  }
+  console.log(`Upserted ${rows.length} rows into ${table}.`);
 }
 
 // Walk an arbitrarily-nested standings payload looking for entries shaped
@@ -80,25 +110,25 @@ async function fetchWeek(year, week) {
 // ── Standings → nfl_team_scores ─────────────────────────────────────────────
 const standingsData = await fetchStandings();
 const entries = collectStandingsEntries(standingsData);
-const upserts = [];
+const scoreUpserts = [];
 const unmatched = [];
 for (const entry of entries) {
   const id = (entry.team.abbreviation || '').toUpperCase();
   if (!VALID_IDS.has(id)) { unmatched.push(entry.team.displayName || entry.team.abbreviation || '?'); continue; }
   const stat = (name) => entry.stats.find(s => s.name === name)?.value ?? 0;
   const wins = stat('wins'), losses = stat('losses'), ties = stat('ties');
-  upserts.push({
+  scoreUpserts.push({
     team_id: id,
     wins, losses, ties,
     points: wins * PTS.win + ties * PTS.tie,
     updated_at: new Date().toISOString(),
   });
 }
-console.log(`Parsed ${upserts.length} teams` + (unmatched.length ? `; unmatched: ${unmatched.join(', ')}` : ''));
+console.log(`Parsed ${scoreUpserts.length} teams` + (unmatched.length ? `; unmatched: ${unmatched.join(', ')}` : ''));
 
-// ── Full regular-season schedule (weeks 1-18) → nfl/matches.json ──────────
+// ── Full regular-season schedule (weeks 1-18) → nfl_matches ────────────────
 const year = seasonYear();
-const compact = [];
+const matchUpserts = [];
 for (let week = 1; week <= 18; week++) {
   const wk = await fetchWeek(year, week);
   const events = wk?.events || [];
@@ -110,39 +140,22 @@ for (let week = 1; week <= 18; week++) {
     if (!home || !away) continue;
     const state = comp.status?.type?.state; // 'pre' | 'in' | 'post'
     const status = state === 'in' ? 'IN_PLAY' : state === 'post' ? 'FINISHED' : 'SCHEDULED';
-    compact.push({
-      d: comp.date || ev.date,
-      s: status,
-      w: week,
-      h: (home.team?.abbreviation || '').toUpperCase(),
-      a: (away.team?.abbreviation || '').toUpperCase(),
-      hs: home.score != null ? Number(home.score) : null,
-      as: away.score != null ? Number(away.score) : null,
+    const homeId = (home.team?.abbreviation || '').toUpperCase();
+    const awayId = (away.team?.abbreviation || '').toUpperCase();
+    matchUpserts.push({
+      id: `${week}-${homeId}-${awayId}`,
+      game_date: comp.date || ev.date,
+      status,
+      week,
+      home_team: homeId,
+      away_team: awayId,
+      home_score: home.score != null ? Number(home.score) : null,
+      away_score: away.score != null ? Number(away.score) : null,
+      updated_at: new Date().toISOString(),
     });
   }
 }
-writeFileSync(new URL('../matches.json', import.meta.url), JSON.stringify({ updated: new Date().toISOString(), matches: compact }) + '\n');
-console.log(`Wrote nfl/matches.json with ${compact.length} matches across ${year} weeks 1-18.`);
+console.log(`Parsed ${matchUpserts.length} matches across ${year} weeks 1-18.`);
 
-if (upserts.length === 0) { console.log('No standings to write.'); process.exit(0); }
-
-if (process.env.DRY_RUN) {
-  console.log(JSON.stringify(upserts, null, 2));
-  process.exit(0);
-}
-
-const res = await fetch(`${SUPABASE_URL}/rest/v1/nfl_team_scores`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'apikey': SUPABASE_ANON,
-    'Authorization': 'Bearer ' + SUPABASE_ANON,
-    'Prefer': 'return=minimal,resolution=merge-duplicates',
-  },
-  body: JSON.stringify(upserts),
-});
-if (!res.ok) {
-  console.error(`Supabase upsert failed ${res.status}: ${await res.text()}`);
-  process.exit(1);
-}
-console.log(`Upserted ${upserts.length} team scores to Supabase.`);
+await supabaseUpsert('nfl_team_scores', scoreUpserts);
+await supabaseUpsert('nfl_matches', matchUpserts);

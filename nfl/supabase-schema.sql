@@ -37,10 +37,28 @@ create table if not exists nfl_team_scores (
   updated_at timestamptz not null default now()
 );
 
+-- Schedule/scores, synced from ESPN every ~15 min by the GitHub Action.
+-- This lives in the database (not a git-committed matches.json) on purpose:
+-- writing here never touches git, so the sync job can run on a schedule
+-- without creating a commit — and therefore without triggering a rebuild —
+-- every time it runs.
+create table if not exists nfl_matches (
+  id text primary key,             -- `${week}-${home_team}-${away_team}`
+  game_date timestamptz not null,
+  status text not null,            -- SCHEDULED | IN_PLAY | FINISHED
+  week int not null,
+  home_team text not null,
+  away_team text not null,
+  home_score int,
+  away_score int,
+  updated_at timestamptz not null default now()
+);
+
 alter table nfl_managers enable row level security;
 alter table nfl_picks enable row level security;
 alter table nfl_draft_state enable row level security;
 alter table nfl_team_scores enable row level security;
+alter table nfl_matches enable row level security;
 
 -- Open policies: like the World Cup app, there's no login system — anyone
 -- holding the anon key (baked into the static page) can read/write. That's
@@ -63,3 +81,7 @@ create policy "public update nfl_draft_state" on nfl_draft_state for update usin
 create policy "public read nfl_team_scores"   on nfl_team_scores for select using (true);
 create policy "public insert nfl_team_scores" on nfl_team_scores for insert with check (true);
 create policy "public update nfl_team_scores" on nfl_team_scores for update using (true);
+
+create policy "public read nfl_matches"   on nfl_matches for select using (true);
+create policy "public insert nfl_matches" on nfl_matches for insert with check (true);
+create policy "public update nfl_matches" on nfl_matches for update using (true);
