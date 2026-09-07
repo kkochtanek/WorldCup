@@ -470,8 +470,8 @@ function logoFallback(img, teamId) {
   img.replaceWith(span);
 }
 
-const MGR_COUNT = 6;
-const DEFAULT_MGRS = ['Kochtanek','Geiger','Hoskins','Weagley','Malaney','Hogan'];
+const MGR_COUNT = 5;
+const DEFAULT_MGRS = ['Kochtanek','Hoskins','Weagley','Malaney','Hogan'];
 const COMMISH_PW = 'kurtrambus';
 const TOTAL_PICKS = TEAMS.length; // 32 teams, 6 managers — snake with an uneven last round
 
@@ -600,7 +600,7 @@ const PTS = {win:1,tie:0.5};
       <div class="card">
         <div class="card-title">⏱ Draft Clock</div>
         <div class="alert alert-info" style="font-size:12px">
-          The clock — Geiger's auto-pick and everyone else's 30-minute shot clock — only runs while it's <b>started</b>. Saving/restarting the roster or resetting the league always leaves it paused, so nothing auto-picks for anyone until you deliberately start it here.
+          The clock — everyone's 30-minute shot clock — only runs while it's <b>started</b>. Saving/restarting the roster or resetting the league always leaves it paused, so nothing auto-picks for anyone until you deliberately start it here.
         </div>
         <div id="clockStatus" style="font-size:13px;font-weight:600;margin-bottom:10px">—</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -611,7 +611,7 @@ const PTS = {win:1,tie:0.5};
       <div class="card">
         <div class="card-title">👥 Managers</div>
         <div class="alert alert-info" style="font-size:12px">
-          <b>Commissioner only.</b> The six managers are fixed — randomize the draft order if you want, then hit Save & Restart Draft. Saving wipes existing picks.
+          <b>Commissioner only.</b> The five managers are fixed — randomize the draft order if you want, then hit Save & Restart Draft. Saving wipes existing picks.
         </div>
         <div class="mgr-inputs" id="mgrInputs"></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
@@ -620,7 +620,7 @@ const PTS = {win:1,tie:0.5};
         </div>
         <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
           <div class="alert alert-warn" style="font-size:12px">
-            Out of time? Auto-complete fills only the <b>remaining</b> picks — everything already drafted stays exactly as is. Teams are assigned by projected win total, balanced so all six rosters come out as even as possible.
+            Out of time? Auto-complete fills only the <b>remaining</b> picks — everything already drafted stays exactly as is. Teams are assigned by projected win total, balanced so all five rosters come out as even as possible.
           </div>
           <button class="btn btn-gold btn-sm" onclick="autoDraftRemaining()">⚡ Auto-Complete Draft</button>
         </div>
@@ -765,7 +765,7 @@ function showTabByName(name) {
 }
 
 // Make the roster bulletproof against bad rows in the database:
-// ignore rows that aren't one of our six names, collapse duplicates
+// ignore rows that aren't one of our five names, collapse duplicates
 // (earliest row per name wins), remap picks to the kept rows, and
 // reassign draft positions 0..n-1 so the snake order always resolves.
 const DEFAULT_SET = new Set(DEFAULT_MGRS.map(n => n.toLowerCase()));
@@ -786,7 +786,7 @@ function normalizeManagers(mgrs, picks) {
   return kept;
 }
 
-// Create any of the six managers that don't exist yet. Runs once on page
+// Create any of the five managers that don't exist yet. Runs once on page
 // load (and again on demand), so the league heals itself on any device.
 let rosterHealAttempted = false;
 async function ensureRoster() {
@@ -1306,21 +1306,20 @@ function renderSetupManagers() {
   const pauseBtn = document.getElementById('btnPauseClock');
   if (status && startBtn && pauseBtn) {
     const started = !!app.draftState.draft_started;
-    status.textContent = started ? '🟢 Clock is running — Geiger auto-picks and the 30-min shot clock are live' : '⏸ Clock is paused — only manual picks count, nobody gets auto-picked for';
+    status.textContent = started ? '🟢 Clock is running — the 30-min shot clock is live' : '⏸ Clock is paused — only manual picks count, nobody gets auto-picked for';
     status.style.color = started ? '#218a52' : 'var(--muted)';
     startBtn.style.display = started ? 'none' : '';
     pauseBtn.style.display = started ? '' : 'none';
   }
 }
 
-// Commissioner-only gate on the automatic side of the draft (Geiger's
-// instant auto-pick + the 30-minute shot clock timeout). Manual picking
-// via the team grid always works regardless of this flag — it only
-// controls whether the background timer in maybeAutoPick() is allowed to
-// insert picks on someone's behalf.
+// Commissioner-only gate on the automatic side of the draft (the
+// 30-minute shot clock timeout). Manual picking via the team grid always
+// works regardless of this flag — it only controls whether the background
+// timer in maybeAutoPick() is allowed to insert picks on someone's behalf.
 async function startClock() {
   if (!app.isCommish) { alert('Commissioner only.'); return; }
-  if (!confirm('▶ Start the draft clock?\n\nFrom now on, Geiger auto-picks instantly on their turn and everyone else gets a 30-minute shot clock before an auto-pick fires for them.')) return;
+  if (!confirm('▶ Start the draft clock?\n\nFrom now on, everyone gets a 30-minute shot clock before an auto-pick fires for them.')) return;
   const qd = new SupabaseQuery(sb, 'nfl_draft_state');
   qd._filters = ['id=eq.1'];
   await qd.update({ draft_started: true, updated_at: new Date().toISOString() });
@@ -1456,14 +1455,15 @@ function chooseTeamFor(mgr) {
 }
 
 // ── LIVE AUTO-PICK ─────────────────────────────────────────────────────────
-// Geiger is always auto-picked; everyone else gets a 30-minute shot clock
-// measured from the previous pick (draft_state.updated_at). Runs from any
-// open page on the 4s poll; jitter + a pre-insert re-check keep multiple
-// open browsers from double-picking, and loadAll dedupes as a backstop.
-// None of this fires until the commissioner explicitly starts the clock
-// (draft_state.draft_started) — before that, only manual picks count, so
-// setting up a fresh draft never silently auto-picks for anyone.
-const AUTO_MANAGERS = ['geiger'];
+// Everyone gets a 30-minute shot clock measured from the previous pick
+// (draft_state.updated_at) — no manager is auto-picked instantly anymore.
+// Runs from any open page on the 4s poll; jitter + a pre-insert re-check
+// keep multiple open browsers from double-picking, and loadAll dedupes as
+// a backstop. None of this fires until the commissioner explicitly starts
+// the clock (draft_state.draft_started) — before that, only manual picks
+// count, so setting up a fresh draft never silently auto-picks for anyone.
+// Add lowercase names here if a manager ever wants to be auto-picked always.
+const AUTO_MANAGERS = [];
 const PICK_TIMEOUT_MS = 30 * 60 * 1000;
 
 function autoPickInfo() {
@@ -1516,7 +1516,7 @@ async function autoDraftRemaining() {
   const done = app.picks.length;
   if (done >= TOTAL_PICKS) { alert('Draft is already complete.'); return; }
   if (app.managers.length !== MGR_COUNT) { alert('Roster looks incomplete — open the League health box below and send it to the commissioner chat.'); return; }
-  if (!confirm(`⚡ Auto-complete the draft?\n\nThe ${done} picks already made stay exactly as they are.\nThe remaining ${TOTAL_PICKS-done} picks will be filled automatically,\nbalancing projected win totals across all six rosters.`)) return;
+  if (!confirm(`⚡ Auto-complete the draft?\n\nThe ${done} picks already made stay exactly as they are.\nThe remaining ${TOTAL_PICKS-done} picks will be filled automatically,\nbalancing projected win totals across all ${MGR_COUNT} rosters.`)) return;
 
   try {
     for (let idx = done; idx < TOTAL_PICKS; idx++) {
@@ -1544,7 +1544,7 @@ async function autoDraftRemaining() {
 
 async function resetAll() {
   if (!app.isCommish) { alert('Commissioner only.'); return; }
-  if (!confirm('⚠️ Reset ALL draft data?\n\nThis deletes all picks, wipes every manager row, and rebuilds the six-man roster fresh. This CANNOT be undone.')) return;
+  if (!confirm(`⚠️ Reset ALL draft data?\n\nThis deletes all picks, wipes every manager row, and rebuilds the ${MGR_COUNT}-man roster fresh. This CANNOT be undone.`)) return;
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/nfl_picks?pick_number=gte.0`, { method:'DELETE', headers: sb.headers() });
     await fetch(`${SUPABASE_URL}/rest/v1/nfl_managers?id=gte.0`, { method:'DELETE', headers: sb.headers() });
@@ -1560,7 +1560,7 @@ async function resetAll() {
     renderManagerPicker();
     renderAll();
     if (app.managers.length === DEFAULT_MGRS.length) {
-      alert('✅ League rebuilt. All six managers are in, draft order 1-6 as listed, and the clock is paused. Everyone can reload and tap their name — hit "Start the Draft Clock" here when you\'re ready to go live.');
+      alert(`✅ League rebuilt. All ${MGR_COUNT} managers are in, draft order 1-${MGR_COUNT} as listed, and the clock is paused. Everyone can reload and tap their name — hit "Start the Draft Clock" here when you're ready to go live.`);
     } else {
       alert('Reset ran but the roster came back incomplete.\n\n' + (app.lastError ? 'Error: ' + app.lastError : 'Try once more.'));
     }
