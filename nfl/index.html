@@ -672,7 +672,12 @@ const PTS = {win:1,tie:0.5};
 // ── SELF-UPDATE ────────────────────────────────────────────────────────────
 // Browsers (especially desktop) cache this page hard. Compare the deployed
 // version stamp against ours and reload once when a new one ships.
-const APP_VERSION = 'v1';
+// IMPORTANT: bump this on every deploy that changes app logic (DEFAULT_MGRS,
+// MGR_COUNT, AUTO_MANAGERS, etc). Forgetting to means an open tab keeps
+// running old code indefinitely — that's exactly how a stale tab re-inserted
+// a removed manager (via ensureRoster()'s old DEFAULT_MGRS) after this file
+// went from 6 to 5 managers, since 'v1' shipped across many deploys unchanged.
+const APP_VERSION = 'v2';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
