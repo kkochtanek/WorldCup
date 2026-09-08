@@ -473,12 +473,13 @@ function logoFallback(img, teamId) {
 const MGR_COUNT = 5;
 const DEFAULT_MGRS = ['Kochtanek','Hoskins','Weagley','Malaney','Hogan'];
 const COMMISH_PW = 'kurtrambus';
-const TOTAL_PICKS = TEAMS.length; // 32 teams, 6 managers — snake with an uneven last round
+// 30, not all 32 — 5 managers × 6 rounds exactly, so every roster comes out
+// even. The 2 lowest-drafted teams of the 32 just go undrafted/unowned.
+const TOTAL_PICKS = MGR_COUNT * 6;
 
-// Snake pick order across MGR_COUNT managers, sliced to exactly TOTAL_PICKS.
-// 32 doesn't divide evenly by 6, so the last round is partial (2 managers
-// get a 6th team, the other 4 stop at 5) — same continuation the snake
-// order would naturally produce.
+// Snake pick order across MGR_COUNT managers, sliced to exactly TOTAL_PICKS
+// (6 full rounds, evenly — no partial round since TOTAL_PICKS is a clean
+// multiple of MGR_COUNT).
 function buildPickOrder() {
   const order = [];
   let round = 0;
@@ -532,7 +533,7 @@ const PTS = {win:1,tie:0.5};
   <div id="tab-draft" class="view main active">
     <div id="draftDone" class="complete-banner" style="display:none">
       <h2>🏆 Draft Complete!</h2>
-      <div style="color:var(--muted);font-size:13px;margin-top:6px">All 32 teams are on the board — check Standings for the live race.</div>
+      <div id="draftDoneSub" style="color:var(--muted);font-size:13px;margin-top:6px">Check Standings for the live race.</div>
     </div>
     <div class="clock-banner waiting" id="clockBanner">
       <div>
@@ -677,7 +678,7 @@ const PTS = {win:1,tie:0.5};
 // running old code indefinitely — that's exactly how a stale tab re-inserted
 // a removed manager (via ensureRoster()'s old DEFAULT_MGRS) after this file
 // went from 6 to 5 managers, since 'v1' shipped across many deploys unchanged.
-const APP_VERSION = 'v2';
+const APP_VERSION = 'v3';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -959,6 +960,10 @@ function renderClock() {
   document.getElementById('draftDone').style.display = isDone ? '' : 'none';
   document.getElementById('teamPickerWrap').style.display = isDone ? 'none' : '';
   document.getElementById('clockBanner').style.display = isDone ? 'none' : '';
+  if (isDone) {
+    document.getElementById('draftDoneSub').textContent =
+      `${TOTAL_PICKS} of ${TEAMS.length} teams drafted, ${TOTAL_PICKS/MGR_COUNT} per roster — check Standings for the live race.`;
+  }
 
   if (!isDone && app.managers.length > 0) {
     const managerPos = PICK_ORDER[pickIdx];
