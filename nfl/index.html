@@ -521,16 +521,16 @@ const PTS = {win:1,tie:0.5};
 <!-- MAIN APP -->
 <div id="screen-app" class="view">
   <div class="tabs">
-    <button class="tab active" onclick="showTab('draft',this)">🎯 Draft</button>
-    <button class="tab" onclick="showTab('leaderboard',this)">🏆 Standings</button>
+    <button class="tab active" onclick="showTab('leaderboard',this)">🏆 Standings</button>
     <button class="tab" onclick="showTab('schedule',this)">📅 Schedule</button>
     <button class="tab" onclick="showTab('board',this)">📋 Board</button>
     <button class="tab" onclick="showTab('teams',this)">🏈 Teams</button>
+    <button class="tab" onclick="showTab('draft',this)">🎯 Draft</button>
     <button class="tab" id="tabSetupBtn" style="display:none" onclick="showTab('setup',this)">⚙ Setup</button>
   </div>
 
   <!-- DRAFT TAB -->
-  <div id="tab-draft" class="view main active">
+  <div id="tab-draft" class="view main">
     <div id="draftDone" class="complete-banner" style="display:none">
       <h2>🏆 Draft Complete!</h2>
       <div id="draftDoneSub" style="color:var(--muted);font-size:13px;margin-top:6px">Check Standings for the live race.</div>
@@ -562,7 +562,7 @@ const PTS = {win:1,tie:0.5};
   </div>
 
   <!-- LEADERBOARD TAB -->
-  <div id="tab-leaderboard" class="view main">
+  <div id="tab-leaderboard" class="view main active">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
         <div class="card-title" style="margin-bottom:0">🏆 Standings</div>
@@ -678,7 +678,7 @@ const PTS = {win:1,tie:0.5};
 // running old code indefinitely — that's exactly how a stale tab re-inserted
 // a removed manager (via ensureRoster()'s old DEFAULT_MGRS) after this file
 // went from 6 to 5 managers, since 'v1' shipped across many deploys unchanged.
-const APP_VERSION = 'v3';
+const APP_VERSION = 'v4';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
