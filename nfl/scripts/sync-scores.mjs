@@ -80,7 +80,14 @@ async function fetchStandings() {
   if (process.env.ESPN_STANDINGS_FIXTURE) {
     return JSON.parse(readFileSync(process.env.ESPN_STANDINGS_FIXTURE, 'utf8'));
   }
-  return espnGet('https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings');
+  // The plain site.api.espn.com/.../standings endpoint now responds with just
+  // a { fullViewLink } stub instead of real data (an ESPN-side change, not
+  // ours — confirmed by probing it directly). site.web.api.espn.com with an
+  // explicit season/type/level/sort still returns the full entries.
+  const url = 'https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings' +
+    `?region=us&lang=en&contentorigin=espn&season=${seasonYear()}&type=0&level=1` +
+    '&sort=winpercent%3Adesc%2Cwins%3Adesc';
+  return espnGet(url);
 }
 
 function seasonYear() {
@@ -115,7 +122,10 @@ const unmatched = [];
 for (const entry of entries) {
   const id = (entry.team.abbreviation || '').toUpperCase();
   if (!VALID_IDS.has(id)) { unmatched.push(entry.team.displayName || entry.team.abbreviation || '?'); continue; }
-  const stat = (name) => entry.stats.find(s => s.name === name)?.value ?? 0;
+  // Values come back as numeric-looking strings (e.g. "1.0") from this
+  // endpoint — coerce so they insert cleanly into the int wins/losses/ties
+  // columns (Postgres won't cast the text "1.0" to int).
+  const stat = (name) => Number(entry.stats.find(s => s.name === name)?.value ?? 0);
   const wins = stat('wins'), losses = stat('losses'), ties = stat('ties');
   scoreUpserts.push({
     team_id: id,
