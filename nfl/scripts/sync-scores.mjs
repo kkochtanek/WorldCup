@@ -108,11 +108,29 @@ async function fetchWeek(year, week) {
 }
 
 // ── Standings → nfl_team_scores ─────────────────────────────────────────────
-const standingsData = await fetchStandings();
 if (process.env.DEBUG_STANDINGS_SHAPE) {
-  console.log('DEBUG top-level keys:', Object.keys(standingsData));
-  console.log('DEBUG sample:', JSON.stringify(standingsData).slice(0, 4000));
+  const candidates = [
+    'https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings',
+    'https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings?season=2026',
+    'https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings?season=2026&level=1&sort=winpercent%3Adesc',
+    'https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings?region=us&lang=en&contentorigin=espn&season=2026&type=0&level=1&sort=winpercent%3Adesc%2Cwins%3Adesc',
+    'https://cdn.espn.com/core/nfl/standings?xhr=1',
+  ];
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) { console.log(`DEBUG ${url}\n  HTTP ${res.status}`); continue; }
+      const data = await res.json();
+      const found = collectStandingsEntries(data);
+      console.log(`DEBUG ${url}\n  top-level keys: ${Object.keys(data)}\n  entries found: ${found.length}`);
+      if (found.length) console.log('  sample entry:', JSON.stringify(found[0]).slice(0, 500));
+    } catch (e) {
+      console.log(`DEBUG ${url}\n  FAILED: ${e.message || e}`);
+    }
+  }
+  process.exit(0);
 }
+const standingsData = await fetchStandings();
 const entries = collectStandingsEntries(standingsData);
 const scoreUpserts = [];
 const unmatched = [];
