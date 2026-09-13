@@ -109,6 +109,10 @@ async function fetchWeek(year, week) {
 
 // ── Standings → nfl_team_scores ─────────────────────────────────────────────
 const standingsData = await fetchStandings();
+if (process.env.DEBUG_STANDINGS_SHAPE) {
+  console.log('DEBUG top-level keys:', Object.keys(standingsData));
+  console.log('DEBUG sample:', JSON.stringify(standingsData).slice(0, 4000));
+}
 const entries = collectStandingsEntries(standingsData);
 const scoreUpserts = [];
 const unmatched = [];
