@@ -12,5 +12,3 @@ jobs:
       - uses: actions/checkout@v4
       - name: Fetch NFL standings/schedule and update Supabase
         run: node nfl/scripts/sync-scores.mjs
-        env:
-          DEBUG_STANDINGS_SHAPE: '1'
