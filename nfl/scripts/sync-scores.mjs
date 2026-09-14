@@ -135,6 +135,11 @@ for (const entry of entries) {
   });
 }
 console.log(`Parsed ${scoreUpserts.length} teams` + (unmatched.length ? `; unmatched: ${unmatched.join(', ')}` : ''));
+if (process.env.DEBUG_TEAM) {
+  const dbg = process.env.DEBUG_TEAM.toUpperCase();
+  console.log(`DEBUG ${dbg} standings entry:`, JSON.stringify(entries.find(e => (e.team.abbreviation||'').toUpperCase() === dbg)));
+  console.log(`DEBUG ${dbg} upsert row:`, JSON.stringify(scoreUpserts.find(s => s.team_id === dbg)));
+}
 
 // ── Full regular-season schedule (weeks 1-18) → nfl_matches ────────────────
 const year = seasonYear();
@@ -166,6 +171,11 @@ for (let week = 1; week <= 18; week++) {
   }
 }
 console.log(`Parsed ${matchUpserts.length} matches across ${year} weeks 1-18.`);
+if (process.env.DEBUG_TEAM) {
+  const dbg = process.env.DEBUG_TEAM.toUpperCase();
+  const games = matchUpserts.filter(m => m.home_team === dbg || m.away_team === dbg);
+  console.log(`DEBUG ${dbg} matches:`, JSON.stringify(games));
+}
 
 await supabaseUpsert('nfl_team_scores', scoreUpserts);
 await supabaseUpsert('nfl_matches', matchUpserts);
