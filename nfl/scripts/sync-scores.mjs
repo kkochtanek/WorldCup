@@ -139,6 +139,22 @@ if (process.env.DEBUG_TEAM) {
   const dbg = process.env.DEBUG_TEAM.toUpperCase();
   console.log(`DEBUG ${dbg} standings entry:`, JSON.stringify(entries.find(e => (e.team.abbreviation||'').toUpperCase() === dbg)));
   console.log(`DEBUG ${dbg} upsert row:`, JSON.stringify(scoreUpserts.find(s => s.team_id === dbg)));
+
+  const seasontypeCandidates = [
+    { label: 'seasontype=2', url: `https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings?region=us&lang=en&contentorigin=espn&season=${seasonYear()}&seasontype=2&type=0&level=1&sort=winpercent%3Adesc%2Cwins%3Adesc` },
+    { label: 'no type param', url: `https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings?region=us&lang=en&contentorigin=espn&season=${seasonYear()}&level=1&sort=winpercent%3Adesc%2Cwins%3Adesc` },
+  ];
+  for (const c of seasontypeCandidates) {
+    try {
+      const res = await fetch(c.url, { headers: { Accept: 'application/json' } });
+      const data = await res.json();
+      const found = collectStandingsEntries(data);
+      const phi = found.find(e => (e.team.abbreviation||'').toUpperCase() === dbg);
+      console.log(`DEBUG [${c.label}] entries: ${found.length}; PHI stats:`, JSON.stringify(phi?.stats?.filter(s => ['wins','losses','ties'].includes(s.name))));
+    } catch (e) {
+      console.log(`DEBUG [${c.label}] FAILED: ${e.message||e}`);
+    }
+  }
 }
 
 // ── Full regular-season schedule (weeks 1-18) → nfl_matches ────────────────
