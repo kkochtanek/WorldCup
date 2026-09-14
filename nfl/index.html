@@ -271,6 +271,11 @@ input:focus{outline:none;border-color:var(--accent)}
 .gteam .gowner{display:block;font-size:10px;color:var(--accent);font-weight:500}
 .gwdl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
 .gpts{font-weight:700;color:var(--text);min-width:26px;text-align:right;font-size:14px}
+.gexp{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-width:32px;text-align:right}
+.gdiff{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;min-width:38px;text-align:right}
+.gdiff.pos{color:#218a52}
+.gdiff.neg{color:var(--red)}
+.gdiff.flat{color:var(--muted)}
 
 /* ── CONFIRM MODAL ── */
 .modal-bg{
@@ -678,7 +683,7 @@ const PTS = {win:1,tie:0.5};
 // running old code indefinitely — that's exactly how a stale tab re-inserted
 // a removed manager (via ensureRoster()'s old DEFAULT_MGRS) after this file
 // went from 6 to 5 managers, since 'v1' shipped across many deploys unchanged.
-const APP_VERSION = 'v4';
+const APP_VERSION = 'v5';
 async function checkForUpdate() {
   try {
     const res = await fetch(window.location.pathname + '?nocache=' + Date.now(), {cache:'no-store'});
@@ -1257,6 +1262,20 @@ function renderSchedule() {
 }
 
 // ── TEAMS TABLE ────────────────────────────────────────────────────────────
+// Expected points from just the games a team has already played (not its
+// full season), based on the same win-total-driven model used for season
+// projections. Comparing this to actual PTS shows who's over/underperforming
+// their preseason expectation, independent of how many games they've played.
+function expPointsToDate(team) {
+  return app.matches
+    .filter(m => m.s === 'FINISHED' && (m.h === team.id || m.a === team.id))
+    .reduce((sum,m) => {
+      const oppId = m.h === team.id ? m.a : m.h;
+      const opp = TEAM_MAP[oppId] || {winTotal:8.5};
+      return sum + matchExpPoints(team, opp);
+    }, 0);
+}
+
 function renderTeamsTable() {
   const el = document.getElementById('groupsGrid');
   if (!el) return;
@@ -1265,20 +1284,28 @@ function renderTeamsTable() {
   el.innerHTML = DIVISIONS.map(g => {
     // Live division standings: sort by points, then wins, then power rank
     const rows = TEAMS.filter(t => t.div===g)
-      .map(t => ({t, s: app.scores[t.id] || {wins:0,losses:0,ties:0,points:0}}))
+      .map(t => {
+        const s = app.scores[t.id] || {wins:0,losses:0,ties:0,points:0};
+        const exp = expPointsToDate(t);
+        return {t, s, exp, diff: s.points - exp};
+      })
       .sort((a,b) => (b.s.points-a.s.points) || (b.s.wins-a.s.wins) || (a.t.rank-b.t.rank));
 
     return `<div class="gcard">
-      <div class="gcard-head"><span>${g}</span><span class="gcard-cols">W-L-T · PTS</span></div>
-      ${rows.map(({t,s},i) => {
+      <div class="gcard-head"><span>${g}</span><span class="gcard-cols">W-L-T · PTS · EXP · +/-</span></div>
+      ${rows.map(({t,s,exp,diff},i) => {
         const mid = pickMap.get(t.id);
         const owner = mid ? (app.managers.find(m=>m.id===mid)?.name||'') : '';
+        const diffCls = Math.abs(diff) < 0.05 ? 'flat' : diff > 0 ? 'pos' : 'neg';
+        const diffTxt = Math.abs(diff) < 0.05 ? '—' : (diff > 0 ? '+' : '') + diff.toFixed(1);
         return `<div class="gcard-row">
           <span class="gpos">${i+1}</span>
           <span class="gflag"><img src="${logoUrl(t.id)}" alt="" loading="lazy" onerror="logoFallback(this,'${t.id}')"/></span>
           <span class="gteam">${t.name}${owner?`<span class="gowner">${owner}</span>`:''}</span>
           <span class="gwdl">${s.wins}-${s.losses}-${s.ties}</span>
           <span class="gpts">${s.points}</span>
+          <span class="gexp">${exp.toFixed(1)}</span>
+          <span class="gdiff ${diffCls}">${diffTxt}</span>
         </div>`;
       }).join('')}
     </div>`;
